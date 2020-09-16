@@ -1,4 +1,6 @@
-<<<<<<< HEAD
+.rosinstall
+.rosinstall.bak
+
 approxmvbb_catkin/
 catkin_boost_python_buildtool/
 catkin_simple/
@@ -27,8 +29,6 @@ mask_rcnn_ros/*.pyc
 mask_rcnn_ros/bags/rgbd_dataset_freiburg3_long_office_household.bag
 
 
-=======
->>>>>>> parent of 83679ab... original version for this work
 # Prerequisites
 *.d
 
