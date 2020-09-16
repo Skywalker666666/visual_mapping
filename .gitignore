@@ -1,24 +1,34 @@
+<<<<<<< HEAD
 approxmvbb_catkin/
 catkin_boost_python_buildtool/
 catkin_simple/
-depth_segmentation/
+# (remove this package) depth_segmentation/
 eigen_catkin/
 eigen_checks/
 gflags_catkin/
 glog_catkin/
-mask_rcnn_ros/
+# (remove this package) mask_rcnn_ros/
 minkindr/
 minkindr_ros/
 modelify_msgs/
 numpy_eigen/
 opencv3_catkin/
 pcl_catkin/
-voxblox-plusplus/
+# (remove this package) voxblox-plusplus/
 vpp_msgs/
 yaml_cpp_catkin/
 
 
+mask_rcnn_ros/.ipynb_checkpoints/
+mask_rcnn_ros/__pycache__/
+mask_rcnn_ros/mask_rcnn_coco.h5
+mask_rcnn_ros/*.pyc
 
+mask_rcnn_ros/bags/rgbd_dataset_freiburg3_long_office_household.bag
+
+
+=======
+>>>>>>> parent of 83679ab... original version for this work
 # Prerequisites
 *.d
 
