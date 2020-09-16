@@ -1,3 +1,24 @@
+approxmvbb_catkin/
+catkin_boost_python_buildtool/
+catkin_simple/
+depth_segmentation/
+eigen_catkin/
+eigen_checks/
+gflags_catkin/
+glog_catkin/
+mask_rcnn_ros/
+minkindr/
+minkindr_ros/
+modelify_msgs/
+numpy_eigen/
+opencv3_catkin/
+pcl_catkin/
+voxblox-plusplus/
+vpp_msgs/
+yaml_cpp_catkin/
+
+
+
 # Prerequisites
 *.d
 
