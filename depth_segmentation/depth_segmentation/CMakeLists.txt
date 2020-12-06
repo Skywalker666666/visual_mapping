@@ -57,7 +57,7 @@ if (WITH_MASKRCNNROS)
   endif()
 endif()
 
-add_definitions(-DSKYWALKER_PRINT_ON)
+#add_definitions(-DSKYWALKER_PRINT_ON)
 add_definitions(-DDISPLAY_DEPTH_IMAGES)
 
 

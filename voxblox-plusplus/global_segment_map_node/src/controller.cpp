@@ -392,10 +392,19 @@ void Controller::processSegment(
   // Look up transform from camera frame to world frame.
   Transformation T_G_C;
   std::string from_frame = segment_point_cloud_msg->header.frame_id;
+
+
   if (lookupTransform(from_frame, world_frame_,
                       segment_point_cloud_msg->header.stamp, &T_G_C)) {
     // Convert the PCL pointcloud into voxblox format.
     // Horrible hack fix to fix color parsing colors in PCL.
+    
+
+#ifdef SKYWALKER_PRINT_ON
+    LOG(INFO)<< "TGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGC" << std::endl;
+    LOG(INFO)<< "Transform Look Up: " << T_G_C << std::endl;
+#endif
+
     for (size_t d = 0; d < segment_point_cloud_msg->fields.size(); ++d) {
       if (segment_point_cloud_msg->fields[d].name == std::string("rgb")) {
         segment_point_cloud_msg->fields[d].datatype =
@@ -542,6 +551,8 @@ void Controller::segmentPointCloudCallback(
   // the start of a new frame is detected when the message timestamp changes.
   // TODO(grinvalm): need additional check for the last frame to be
   // integrated.
+  LOG(INFO)<< "Receive TEST xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx Done: " << std::endl;
+
   if (received_first_message_ &&
       last_segment_msg_timestamp_ != segment_point_cloud_msg->header.stamp) {
     if (segments_to_integrate_.size() > 0u) {
@@ -550,6 +561,12 @@ void Controller::segmentPointCloudCallback(
       ROS_INFO("No segments to integrate.");
     }
   }
+
+#ifdef SKYWALKER_PRINT_ON
+    LOG(INFO)<< "segment_point_cloud_msg->header.stamp: " << std::to_string(segment_point_cloud_msg->header.stamp.toSec())  << std::endl;
+    LOG(INFO)<< "last_segment_msg_timestamp_: " << std::to_string(last_segment_msg_timestamp_.toSec()) << std::endl;
+#endif
+
   received_first_message_ = true;
   last_segment_msg_timestamp_ = segment_point_cloud_msg->header.stamp;
 
@@ -872,6 +889,15 @@ bool Controller::lookupTransform(const std::string& from_frame,
     LOG(ERROR) << "Error getting TF transform from sensor data: " << ex.what();
     return false;
   }
+
+#ifdef SKYWALKER_PRINT_ON
+    LOG(INFO)<< "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT" << std::endl;
+    LOG(INFO)<< "tf_transform timestamp: " << tf_transform.stamp_.toSec()  << std::endl;
+    LOG(INFO)<< "tf_transform frame_id: " << tf_transform.frame_id_  << std::endl;
+    LOG(INFO)<< "tf_transform child_frame_id: " << tf_transform.child_frame_id_  << std::endl;
+    LOG(INFO)<< "tf_transform matrix 3x3: " << tf_transform.getBasis().getRow(0).getX()  << std::endl;
+    //LOG(INFO)<< "tf_transform Vector3: " << tf_transform.getOrigin()  << std::endl;
+#endif
 
   tf::transformTFToKindr(tf_transform, transform);
   return true;

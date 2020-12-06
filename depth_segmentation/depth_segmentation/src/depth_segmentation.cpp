@@ -1001,8 +1001,36 @@ void DepthSegmenter::labelMap(
     const cv::Mat& depth_map, const cv::Mat& edge_map,
     const cv::Mat& normal_map, cv::Mat* labeled_map,
     std::vector<cv::Mat>* segment_masks, std::vector<Segment>* segments) {
+
+  
+#ifdef SKYWALKER_PRINT_ON
+    LOG(INFO)<< "p1 instance_insinsinsinsinsinsinsinsinsinsinsinsins" << std::endl;
+  for (size_t i = 0u; i < segments->size(); ++i) {
+    if ((*segments)[i].instance_label.size() > 0u) {
+        LOG(INFO)<< "p1 instance_label: "<< *((*segments)[i].instance_label.begin()) << std::endl;
+    } 
+    else {
+        LOG(INFO)<< "p1 instance_label: null "<< std::endl;
+    }
+
+  }
+#endif
+
   labelMap(rgb_image, depth_image, depth_map, edge_map, normal_map, labeled_map,
            segment_masks, segments);
+#ifdef SKYWALKER_PRINT_ON
+    LOG(INFO)<< "p2 instance_insinsinsinsinsinsinsinsinsinsinsinsins" << std::endl;
+  for (size_t i = 0u; i < segments->size(); ++i) {
+    if ((*segments)[i].instance_label.size() > 0u) {
+        LOG(INFO)<< "p2 instance_label: "<< *((*segments)[i].instance_label.begin()) << std::endl;
+    } 
+    else {
+        LOG(INFO)<< "p2 instance_label: null "<< std::endl;
+    }
+
+  }
+#endif
+
 
   for (size_t i = 0u; i < segments->size(); ++i) {
     // For each DS segment identify the corresponding

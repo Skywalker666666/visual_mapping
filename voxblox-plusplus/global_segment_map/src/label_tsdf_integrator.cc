@@ -185,6 +185,14 @@ void LabelTsdfIntegrator::computeSegmentLabelCandidates(
   const int segment_points_count = segment->points_C_.size();
   std::unordered_set<Label> merge_candidate_labels;
 
+#ifdef SKYWALKER_PRINT_ON
+  //bool first_segment_flag = true;
+  //LOG(INFO)<< "sssssssssssssssssssssssssssssssssssssssssssssssssssssssss" << std::endl;
+  //LOG(INFO)<< "segment->points_C_.size():   " << segment->points_C_.size()  << std::endl;
+#endif
+
+
+
   for (const Point& point_C : segment->points_C_) {
     const Point point_G = segment->T_G_C_ * point_C;
 
@@ -194,6 +202,16 @@ void LabelTsdfIntegrator::computeSegmentLabelCandidates(
     // Get the corresponding voxel by 3D position in world frame.
     Layer<TsdfVoxel>::BlockType::ConstPtr tsdf_block_ptr =
         layer_->getBlockPtrByCoordinates(point_G);
+
+#ifdef SKYWALKER_PRINT_ON
+    //if (first_segment_flag == true){
+      //bool label_block_ptr_valid;
+      //label_block_ptr_valid = (label_block_ptr != nullptr);
+      //LOG(INFO)<< "NULLNULLNULLNULLNULLNULLNULLNULLNULLNULLNULLNULLNULLNULLNULL" << std::endl;
+      //LOG(INFO)<< "label_block_ptr != nullptr:   " << label_block_ptr_valid << std::endl;
+    //  first_segment_flag = false;
+    //}
+#endif
 
     if (label_block_ptr != nullptr) {
       const LabelVoxel& label_voxel =
@@ -224,6 +242,10 @@ void LabelTsdfIntegrator::computeSegmentLabelCandidates(
   // Previously unobserved segment gets an unseen label.
   if (!candidate_label_exists) {
     Label fresh_label = getFreshLabel();
+#ifdef SKYWALKER_PRINT_ON
+  //LOG(INFO)<< "ffffffffffffffffffffffffffffffffffffffffffffffffffffff" << std::endl;
+  //LOG(INFO)<< "fresh_label:   " << fresh_label << std::endl;
+#endif
     std::map<Segment*, size_t> map;
     map.insert(std::pair<Segment*, size_t>(segment, segment->points_C_.size()));
     candidates->insert(
@@ -247,6 +269,10 @@ bool LabelTsdfIntegrator::getNextSegmentLabelPair(
   Segment* max_segment;
   std::map<voxblox::Segment*, size_t> segments_to_recompute;
 
+#ifdef SKYWALKER_PRINT_ON
+      //LOG(INFO)<< "P43_:the size of labelled_segments: " << labelled_segments.size() << std::endl;
+#endif
+
   for (auto label_it = candidates->begin(); label_it != candidates->end();
        ++label_it) {
     for (auto segment_it = label_it->second.begin();
@@ -256,6 +282,12 @@ bool LabelTsdfIntegrator::getNextSegmentLabelPair(
           segment_it->second > label_tsdf_config_.min_label_voxel_count;
       bool is_unlabelled =
           labelled_segments.find(segment_it->first) == labelled_segments.end();
+
+#ifdef SKYWALKER_PRINT_ON
+      //LOG(INFO)<< "((((((((((((((((((((((((((((((((((((((((" << std::endl;
+      //LOG(INFO)<< "is_unlabelled:    " << is_unlabelled << std::endl;
+#endif
+
       if (count_greater_than_max && count_greater_than_min && is_unlabelled) {
         max_count = segment_it->second;
         max_segment = segment_it->first;
@@ -264,6 +296,11 @@ bool LabelTsdfIntegrator::getNextSegmentLabelPair(
       }
     }
   }
+
+#ifdef SKYWALKER_PRINT_ON
+      //LOG(INFO)<< "P42_:the size of segments_to_recompute: " << segments_to_recompute.size()  << std::endl;
+#endif
+
   if (max_count == 0u) {
     return false;
   }
@@ -596,6 +633,14 @@ void LabelTsdfIntegrator::integrateVoxel(
     BlockIndex block_idx;
 
     Block<TsdfVoxel>::Ptr tsdf_block = nullptr;
+
+
+#ifdef SKYWALKER_PRINT_ON
+  //LOG(INFO)<< "D1D1D1D1" << std::endl;
+  //LOG(INFO)<< "before the function call, tsdf_block:   " << (tsdf_block != nullptr) << std::endl;
+  //LOG(INFO)<< "before the function call, &tsdf_block:   " << (&tsdf_block != nullptr) << std::endl;
+#endif
+
     TsdfVoxel* tsdf_voxel = allocateStorageAndGetVoxelPtr(
         global_voxel_idx, &tsdf_block, &block_idx);
 

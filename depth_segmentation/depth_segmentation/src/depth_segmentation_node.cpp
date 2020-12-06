@@ -117,10 +117,6 @@ class DepthSegmentationNode {
 #ifdef MASKRCNNROS_AVAILABLE
 
 
-#ifdef SKYWALKER_PRINT_ON
-    //LOG(INFO)<< "What the hell is going ou in 1: " << std::endl;
-#endif
-
       instance_segmentation_sub_ =
           new message_filters::Subscriber<mask_rcnn_ros::Result>(
               node_handle_, semantic_instance_segmentation_topic_, 1);
@@ -356,10 +352,10 @@ class DepthSegmentationNode {
 
 
 #ifdef SKYWALKER_PRINT_ON
-      pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+      //////pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
       //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
 
-      ConvertPointSurfelLabeltoPointXYZRGB(scene_pcl, cloud);
+      //////ConvertPointSurfelLabeltoPointXYZRGB(scene_pcl, cloud);
       
       // ---------------------------------------------------------------
       // online viewer
@@ -373,7 +369,7 @@ class DepthSegmentationNode {
       // ---------------------------------------------------------------
       // save point cloud
       // ---------------------------------------------------------------
-      pcl::io::savePCDFile("test_" + std::to_string(header.stamp.toSec()) + ".pcd", *cloud);
+      //////pcl::io::savePCDFile("test_" + std::to_string(header.stamp.toSec()) + ".pcd", *cloud);
 #endif
 
     } else {
@@ -490,18 +486,18 @@ class DepthSegmentationNode {
                       cv::Mat& mask, cv::Mat* depth_map, cv::Mat* normal_map,
                       cv::Mat* edge_map) {
 #ifdef WRITE_IMAGES
-    cv::imwrite(
-        std::to_string(cv_rgb_image->header.stamp.toSec()) + "_rgb_image.png",
-        cv_rgb_image->image);
-    cv::imwrite(
-        std::to_string(cv_rgb_image->header.stamp.toSec()) + "_bw_image.png",
-        bw_image);
-    cv::imwrite(
-        std::to_string(depth_msg->header.stamp.toSec()) + "_depth_image.png",
-        rescaled_depth);
-    cv::imwrite(
-        std::to_string(depth_msg->header.stamp.toSec()) + "_depth_mask.png",
-        mask);
+    //cv::imwrite(
+    //    std::to_string(cv_rgb_image->header.stamp.toSec()) + "_rgb_image.png",
+    //    cv_rgb_image->image);
+    //cv::imwrite(
+    //    std::to_string(cv_rgb_image->header.stamp.toSec()) + "_bw_image.png",
+    //    bw_image);
+    //cv::imwrite(
+    //    std::to_string(depth_msg->header.stamp.toSec()) + "_depth_image.png",
+    //    rescaled_depth);
+    //cv::imwrite(
+    //    std::to_string(depth_msg->header.stamp.toSec()) + "_depth_mask.png",
+    //    mask);
 #endif  // WRITE_IMAGES
 
 #ifdef DISPLAY_DEPTH_IMAGES
@@ -631,7 +627,6 @@ class DepthSegmentationNode {
     LOG(INFO)<< "sensor_msgs::Image::ConstPtr& rgb_msg: " << rgb_msg->header.stamp.toSec() << std::endl;
 
     LOG(INFO)<< "AAAAAAAAAAAAAAAAAAAAAAAAAAAAA mask sizes: " << segmentation_msg->masks.size() << std::endl;
-    //LOG(INFO)<< "class id size: " << segmentation_msg->class_ids.size() << std::endl;
 
 
     for (size_t i = 0u; i < segmentation_msg->masks.size(); ++i) {
@@ -639,11 +634,11 @@ class DepthSegmentationNode {
         cv_mask_image = cv_bridge::toCvCopy(segmentation_msg->masks[i],
                                             sensor_msgs::image_encodings::MONO8);
 
-        LOG(INFO)<< "cv_mask_image : " << cv_mask_image->image.clone() << std::endl;
-        LOG(INFO)<< "writing images: " << i << std::endl;
-        LOG(INFO)<< "mask frame_id: " << cv_mask_image->header.frame_id << std::endl;
-        LOG(INFO)<< "mask time stamp: " << cv_mask_image->header.stamp.toSec() << std::endl;
-        LOG(INFO)<< "class id : " << segmentation_msg->class_ids[i] << std::endl;
+        //LOG(INFO)<< "cv_mask_image : " << cv_mask_image->image.clone() << std::endl;
+        //LOG(INFO)<< "writing images: " << i << std::endl;
+        //LOG(INFO)<< "mask frame_id: " << cv_mask_image->header.frame_id << std::endl;
+        //LOG(INFO)<< "mask time stamp: " << cv_mask_image->header.stamp.toSec() << std::endl;
+        //LOG(INFO)<< "class id : " << segmentation_msg->class_ids[i] << std::endl;
         cv::imwrite("/home/zhiliu/Documents/catkin_ws_VoSM/outputs/" + cv_mask_image->header.frame_id + "_"  + std::to_string(i) + "_" + std::to_string(cv_mask_image->header.stamp.toSec()) + "_mask.jpg", cv_mask_image->image.clone());
       }
 #endif
@@ -706,8 +701,8 @@ class DepthSegmentationNode {
 
 #ifdef SKYWALKER_PRINT_ON
         cv::imwrite("/home/zhiliu/Documents/catkin_ws_VoSM/outputs/" + std::to_string(cv_rgb_image->header.stamp.toSec()) + "_label_map.jpg", label_map);
-
-        LOG(INFO)<< "cv_label_map : " << label_map << std::endl;
+        // show label map
+        //LOG(INFO)<< "cv_label_map : " << label_map << std::endl;
 #endif
         if (segments.size() > 0u) {
           publish_segments(segments, depth_msg->header);
@@ -794,8 +789,20 @@ class DepthSegmentationNode {
 };
 
 int main(int argc, char** argv) {
+  //google::SetLogDestination(google::GLOG_INFO, "");
+  // this one has to be called before the init
+  FLAGS_log_dir = "/home/zhiliu/Documents/catkin_ws_VoSM/outputs/logs/";
+
   google::InitGoogleLogging(argv[0]);
+  //FLAGS_stderrthreshold = 0;
+
+  // The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
+  //FLAGS_stderrthreshold = 1;
   FLAGS_stderrthreshold = 0;
+  // not only log file also stderr
+  FLAGS_alsologtostderr = true;
+  // set the path for log files 
+
 
   LOG(INFO) << "Starting depth segmentation ... ";
   ros::init(argc, argv, "depth_segmentation_node");
