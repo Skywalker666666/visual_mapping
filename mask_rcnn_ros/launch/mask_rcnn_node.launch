@@ -1,0 +1,10 @@
+<launch>
+  <arg name="sensor_name" default="primesense" />
+  <arg name="visualize" default="false" />
+
+  <node name="mask_rcnn" pkg="mask_rcnn_ros" type="mask_rcnn_node.py" output="log">
+    <remap from="~input" to="rgb_image_sub_topic" />
+    <rosparam command="load" file="$(find depth_segmentation)/cfg/$(arg sensor_name)_topics.yaml"/>
+    <param name="~visualization" value="$(arg visualize)" />
+  </node>
+</launch>

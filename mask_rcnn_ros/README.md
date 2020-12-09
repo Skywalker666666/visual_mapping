@@ -22,6 +22,12 @@ If you want to train the model on your own class definition or dataset, try it o
 
 ### Parameters
 
+* `~input: string`
+
+    Topic name of the input RGB image.
+
+    Default: `'/camera/rgb/image_raw'`
+
 * `~model_path: string`
 
     Path to the HDF5 model file.
@@ -49,12 +55,6 @@ If you want to train the model on your own class definition or dataset, try it o
 
     Visualized result over an input image.
 
-
-### Topics Subscribed
-
-* `~input: sensor_msgs/Image`
-
-    Input image to be proccessed
 
 ## Getting Started
 

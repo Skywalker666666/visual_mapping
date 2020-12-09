@@ -5,13 +5,12 @@
 #include <glog/logging.h>
 #include <ros/ros.h>
 
-#include "voxblox_gsm/controller.h"
-#include "voxblox_gsm/sliding_window_controller.h"
+#include "global_segment_map_node/controller.h"
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "gsm_node");
 
-  //google::SetLogDestination(google::GLOG_INFO, "");
+
   // this one has to be called before the init
   FLAGS_log_dir = "/home/zhiliu/Documents/catkin_ws_VoSM/outputs/logs/";
 
@@ -19,18 +18,24 @@ int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, false);
   google::InstallFailureSignalHandler();
 
+
   // The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
   //FLAGS_stderrthreshold = 1;
   FLAGS_stderrthreshold = 0;
   // not only log file also stderr
   FLAGS_alsologtostderr = true;
-  // set the path for log files 
+  // set the path for log files
+
 
   ros::NodeHandle node_handle;
   ros::NodeHandle node_handle_private("~");
 
   voxblox::voxblox_gsm::Controller* controller;
-  LOG(INFO) << "Starting Voxblox++ node.";
+
+  std::cout << endl
+            << "Voxblox++ Copyright (C) 2016-2020 ASL, ETH Zurich." << endl
+            << endl;
+
   controller = new voxblox::voxblox_gsm::Controller(&node_handle_private);
 
   ros::ServiceServer reset_map_srv;
@@ -42,14 +47,21 @@ int main(int argc, char** argv) {
   ros::Subscriber segment_point_cloud_sub;
   controller->subscribeSegmentPointCloudTopic(&segment_point_cloud_sub);
 
+  if (controller->publish_scene_map_) {
+    controller->advertiseMapTopic();
+  }
+
   if (controller->publish_scene_mesh_) {
     controller->advertiseSceneMeshTopic();
     controller->advertiseSceneCloudTopic();
   }
 
-  if (controller->compute_and_publish_bbox_) {
+  if (controller->publish_object_bbox_) {
     controller->advertiseBboxTopic();
   }
+
+  ros::ServiceServer get_map_srv;
+  controller->advertiseGetMapService(&get_map_srv);
 
   ros::ServiceServer generate_mesh_srv;
   controller->advertiseGenerateMeshService(&generate_mesh_srv);
@@ -78,8 +90,5 @@ int main(int argc, char** argv) {
   ros::waitForShutdown();
 
   LOG(INFO) << "Shutting down.";
-
-
-  google::ShutdownGoogleLogging();
   return 0;
 }

@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(voxblox)
 
-
-#add_definitions(-DSKYWALKER_PRINT_ON)
-
 find_package(catkin_simple REQUIRED)
 catkin_simple()
 

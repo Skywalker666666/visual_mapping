@@ -20,6 +20,7 @@ from mask_rcnn_ros.msg import Result
 # Local path to trained weights file
 ROS_HOME = os.environ.get('ROS_HOME', os.path.join(os.environ['HOME'], '.ros'))
 COCO_MODEL_PATH = os.path.join(ROS_HOME, 'mask_rcnn_coco.h5')
+RGB_TOPIC = '/camera/rgb/image_raw'
 
 # COCO Class names
 # Index of the class in the list is its ID. For example, to get ID of
@@ -54,6 +55,9 @@ class MaskRCNNNode(object):
         config = InferenceConfig()
         config.display()
 
+        # Get input RGB topic.
+        self._rgb_input_topic = rospy.get_param('~input', RGB_TOPIC)
+
         self._visualization = rospy.get_param('~visualization', True)
 
         # Create model object in inference mode.
@@ -79,7 +83,8 @@ class MaskRCNNNode(object):
     def run(self):
         self._result_pub = rospy.Publisher('~result', Result, queue_size=1)
         vis_pub = rospy.Publisher('~visualization', Image, queue_size=1)
-        rospy.Subscriber('~input', Image,
+
+        rospy.Subscriber(self._rgb_input_topic, Image,
                          self._image_callback, queue_size=1)
 
         rate = rospy.Rate(self._publish_rate)
@@ -96,7 +101,6 @@ class MaskRCNNNode(object):
                 np_image = self._cv_bridge.imgmsg_to_cv2(msg, 'bgr8')
 
                 # Run detection
-                print("Run detection")
                 results = self._model.detect([np_image], verbose=0)
                 result = results[0]
                 result_msg = self._build_result_msg(msg, result)
