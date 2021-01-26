@@ -27,5 +27,5 @@ meshing:
   visualize: true
   update_mesh_every_n_sec: 2.0
   publish_segment_mesh: false
-  publish_scene_mesh: false
+  publish_scene_mesh: true
   mesh_filename: "gsm_scenenn_mesh.ply"

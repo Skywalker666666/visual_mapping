@@ -63,38 +63,46 @@ bool CameraTracker::computeTransform(const cv::Mat& src_rgb_image,
 }
 
 void CameraTracker::visualize(const cv::Mat old_depth_image,
-                              const cv::Mat new_depth_image) const {
-  CHECK(!old_depth_image.empty());
-  CHECK(!new_depth_image.empty());
-  CHECK_EQ(old_depth_image.size(), new_depth_image.size());
-  CHECK_EQ(old_depth_image.type(), CV_32FC1);
-  CHECK_EQ(new_depth_image.type(), CV_32FC1);
+                              const cv::Mat new_depth_image,
+                              const std::string filename ) const {
+  if (old_depth_image.empty()) {
+    LOG(INFO)<< "Oops, your old depth image is empty"  << std::endl;
+  }else{
+    CHECK(!old_depth_image.empty());
+    CHECK(!new_depth_image.empty());
+    CHECK_EQ(old_depth_image.size(), new_depth_image.size());
+    CHECK_EQ(old_depth_image.type(), CV_32FC1);
+    CHECK_EQ(new_depth_image.type(), CV_32FC1);
 
-  // Place both depth images into one.
-  cv::Size size_old_depth = old_depth_image.size();
-  cv::Size size_new_depth = new_depth_image.size();
-  cv::Mat combined_depth(size_old_depth.height,
-                         size_old_depth.width + size_new_depth.width, CV_32FC1);
-  cv::Mat left(combined_depth,
-               cv::Rect(0, 0, size_old_depth.width, size_old_depth.height));
-  old_depth_image.copyTo(left);
-  cv::Mat right(combined_depth,
-                cv::Rect(size_old_depth.width, 0, size_new_depth.width,
-                         size_new_depth.height));
-  new_depth_image.copyTo(right);
+    // Place both depth images into one.
+    cv::Size size_old_depth = old_depth_image.size();
+    cv::Size size_new_depth = new_depth_image.size();
+    cv::Mat combined_depth(size_old_depth.height,
+                           size_old_depth.width + size_new_depth.width, CV_32FC1);
+    cv::Mat left(combined_depth,
+                 cv::Rect(0, 0, size_old_depth.width, size_old_depth.height));
+    old_depth_image.copyTo(left);
+    cv::Mat right(combined_depth,
+                  cv::Rect(size_old_depth.width, 0, size_new_depth.width,
+                           size_new_depth.height));
+    new_depth_image.copyTo(right);
 
-  // Adjust the colors, such that the depth images look nicer.
-  double min;
-  double max;
-  cv::minMaxIdx(combined_depth, &min, &max, 0, 0,
-                cv::Mat(combined_depth == combined_depth));
-  combined_depth -= min;
-  cv::Mat adjusted_depth;
-  cv::convertScaleAbs(combined_depth, adjusted_depth,
-                      static_cast<double>(kImageRange) / (max - min));
+    // Adjust the colors, such that the depth images look nicer.
+    double min;
+    double max;
+    cv::minMaxIdx(combined_depth, &min, &max, 0, 0,
+                  cv::Mat(combined_depth == combined_depth));
+    combined_depth -= min;
+    cv::Mat adjusted_depth;
+    cv::convertScaleAbs(combined_depth, adjusted_depth,
+                        static_cast<double>(kImageRange) / (max - min));
 
-  cv::imshow(kDebugWindowName, adjusted_depth);
-  cv::waitKey(1);
+    cv::imshow(kDebugWindowName, adjusted_depth);
+    cv::waitKey(1);
+
+    LOG(INFO)<< "YESYESYESYES. write adjusted depth image"  << std::endl;
+    cv::imwrite(filename, adjusted_depth);
+  }
 }
 
 void CameraTracker::createMask(const cv::Mat& depth, cv::Mat* mask) {
@@ -993,8 +1001,36 @@ void DepthSegmenter::labelMap(
     const cv::Mat& depth_map, const cv::Mat& edge_map,
     const cv::Mat& normal_map, cv::Mat* labeled_map,
     std::vector<cv::Mat>* segment_masks, std::vector<Segment>* segments) {
+
+  
+#ifdef SKYWALKER_PRINT_ON
+    LOG(INFO)<< "p1 instance_insinsinsinsinsinsinsinsinsinsinsinsins" << std::endl;
+  for (size_t i = 0u; i < segments->size(); ++i) {
+    if ((*segments)[i].instance_label.size() > 0u) {
+        LOG(INFO)<< "p1 instance_label: "<< *((*segments)[i].instance_label.begin()) << std::endl;
+    } 
+    else {
+        LOG(INFO)<< "p1 instance_label: null "<< std::endl;
+    }
+
+  }
+#endif
+
   labelMap(rgb_image, depth_image, depth_map, edge_map, normal_map, labeled_map,
            segment_masks, segments);
+#ifdef SKYWALKER_PRINT_ON
+    LOG(INFO)<< "p2 instance_insinsinsinsinsinsinsinsinsinsinsinsins" << std::endl;
+  for (size_t i = 0u; i < segments->size(); ++i) {
+    if ((*segments)[i].instance_label.size() > 0u) {
+        LOG(INFO)<< "p2 instance_label: "<< *((*segments)[i].instance_label.begin()) << std::endl;
+    } 
+    else {
+        LOG(INFO)<< "p2 instance_label: null "<< std::endl;
+    }
+
+  }
+#endif
+
 
   for (size_t i = 0u; i < segments->size(); ++i) {
     // For each DS segment identify the corresponding

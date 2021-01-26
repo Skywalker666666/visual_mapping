@@ -27,6 +27,12 @@
 #include "depth_segmentation/depth_segmentation.h"
 #include "depth_segmentation/ros_common.h"
 
+
+#include <opencv2/photo/photo.hpp>
+#include <pcl/visualization/cloud_viewer.h>
+#include <pcl/io/pcd_io.h>
+
+
 struct PointSurfelLabel {
   PCL_ADD_POINT4D;
   PCL_ADD_NORMAL4D;
@@ -93,6 +99,11 @@ class DepthSegmentationNode {
 
     constexpr int kQueueSize = 30;
 
+#ifdef SKYWALKER_PRINT_ON
+    //LOG(INFO)<< "What the hell is going on out: " << std::endl;
+#endif
+
+
 #ifndef MASKRCNNROS_AVAILABLE
     if (params_.semantic_instance_segmentation.enable) {
       params_.semantic_instance_segmentation.enable = false;
@@ -104,6 +115,8 @@ class DepthSegmentationNode {
 
     if (params_.semantic_instance_segmentation.enable) {
 #ifdef MASKRCNNROS_AVAILABLE
+
+
       instance_segmentation_sub_ =
           new message_filters::Subscriber<mask_rcnn_ros::Result>(
               node_handle_, semantic_instance_segmentation_topic_, 1);
@@ -115,6 +128,11 @@ class DepthSegmentationNode {
 
       image_segmentation_sync_policy_->registerCallback(boost::bind(
           &DepthSegmentationNode::imageSegmentationCallback, this, _1, _2, _3));
+#ifdef SKYWALKER_PRINT_ON
+    //LOG(INFO)<< "Register of imageSegmentationCallback is successful" << std::endl;
+#endif
+
+
 #endif
     } else {
       image_sync_policy_ = new message_filters::Synchronizer<ImageSyncPolicy>(
@@ -256,6 +274,40 @@ class DepthSegmentationNode {
     point_pcl->instance_label = instance_label;
   }
 
+
+#ifdef SKYWALKER_PRINT_ON
+  // Add for convert point cloud format for visualization
+  void ConvertPointSurfelLabeltoPointXYZRGB(
+      const pcl::PointCloud<PointSurfelLabel>::Ptr segment_pcl,
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud) {
+	  for (int pIndex = 0; pIndex < segment_pcl->points.size(); pIndex++) {
+                //LOG(INFO)<< "What is going on for segment: "<< segment_pcl->points[pIndex].x << std::endl;
+		pcl::PointXYZRGB point_xyzrgb;
+	        point_xyzrgb.x = segment_pcl->points[pIndex].x;
+		point_xyzrgb.y = segment_pcl->points[pIndex].y;
+		point_xyzrgb.z = segment_pcl->points[pIndex].z;
+		point_xyzrgb.r = segment_pcl->points[pIndex].r;
+		point_xyzrgb.g = segment_pcl->points[pIndex].g;
+		point_xyzrgb.b = segment_pcl->points[pIndex].b;
+		cloud->push_back(point_xyzrgb);
+	  }
+  }
+
+  // visualization
+  //void viewerOneOff(pcl::visualization::PCLVisualizer& viewer) {
+  //  viewer.setBackgroundColor (1.0, 0.5, 1.0);
+  //  pcl::PointXYZRGB o;
+  //  o.x = 1.0;
+  //  o.y = 0;
+  //  o.z = 0;
+  //  viewer.addSphere (o, 0.25, "sphere", 0);
+  //  //std::cout << "i only run once" << std::endl;
+  //  LOG(INFO)<< "I only run once" << std::endl;
+  //}
+#endif
+
+
+
   void publish_segments(
       const std::vector<depth_segmentation::Segment>& segments,
       const std_msgs::Header& header) {
@@ -293,9 +345,33 @@ class DepthSegmentationNode {
         pcl2_msg.header.frame_id = header.frame_id;
         point_cloud2_segment_pub_.publish(pcl2_msg);
       }
+
       if (params_.visualize_segmented_scene) {
         pcl::toROSMsg(*scene_pcl, pcl2_msg);
       }
+
+
+#ifdef SKYWALKER_PRINT_ON
+      //////pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+      //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
+
+      //////ConvertPointSurfelLabeltoPointXYZRGB(scene_pcl, cloud);
+      
+      // ---------------------------------------------------------------
+      // online viewer
+      // ---------------------------------------------------------------
+      //pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
+      //viewer.showCloud(cloud);
+      //viewer.runOnVisualizationThreadOnce(viewerOneOff());
+      //while(!viewer.wasStopped()){
+      //}
+
+      // ---------------------------------------------------------------
+      // save point cloud
+      // ---------------------------------------------------------------
+      //////pcl::io::savePCDFile("test_" + std::to_string(header.stamp.toSec()) + ".pcd", *cloud);
+#endif
+
     } else {
       pcl::PointCloud<pcl::PointSurfel>::Ptr scene_pcl(
           new pcl::PointCloud<pcl::PointSurfel>);
@@ -322,6 +398,8 @@ class DepthSegmentationNode {
         pcl::toROSMsg(*scene_pcl, pcl2_msg);
       }
     }
+
+
 
     if (params_.visualize_segmented_scene) {
       pcl2_msg.header.stamp = header.stamp;
@@ -408,22 +486,23 @@ class DepthSegmentationNode {
                       cv::Mat& mask, cv::Mat* depth_map, cv::Mat* normal_map,
                       cv::Mat* edge_map) {
 #ifdef WRITE_IMAGES
-    cv::imwrite(
-        std::to_string(cv_rgb_image->header.stamp.toSec()) + "_rgb_image.png",
-        cv_rgb_image->image);
-    cv::imwrite(
-        std::to_string(cv_rgb_image->header.stamp.toSec()) + "_bw_image.png",
-        bw_image);
-    cv::imwrite(
-        std::to_string(depth_msg->header.stamp.toSec()) + "_depth_image.png",
-        rescaled_depth);
-    cv::imwrite(
-        std::to_string(depth_msg->header.stamp.toSec()) + "_depth_mask.png",
-        mask);
+    //cv::imwrite(
+    //    std::to_string(cv_rgb_image->header.stamp.toSec()) + "_rgb_image.png",
+    //    cv_rgb_image->image);
+    //cv::imwrite(
+    //    std::to_string(cv_rgb_image->header.stamp.toSec()) + "_bw_image.png",
+    //    bw_image);
+    //cv::imwrite(
+    //    std::to_string(depth_msg->header.stamp.toSec()) + "_depth_image.png",
+    //    rescaled_depth);
+    //cv::imwrite(
+    //    std::to_string(depth_msg->header.stamp.toSec()) + "_depth_mask.png",
+    //    mask);
 #endif  // WRITE_IMAGES
 
 #ifdef DISPLAY_DEPTH_IMAGES
-    camera_tracker_.visualize(camera_tracker_.getDepthImage(), rescaled_depth);
+    camera_tracker_.visualize(camera_tracker_.getDepthImage(), rescaled_depth, "/home/zhiliu/Documents/catkin_ws_VoSM/outputs/" + std::to_string(depth_msg->header.stamp.toSec()) + "_depth_adjusted.png");
+    //camera_tracker_.visualize(camera_tracker_.getDepthImage(), rescaled_depth);
 #endif  // DISPLAY_DEPTH_IMAGES
 
     // Compute transform from tracker.
@@ -542,6 +621,28 @@ class DepthSegmentationNode {
     semanticInstanceSegmentationFromRosMsg(segmentation_msg,
                                            &instance_segmentation);
 
+#ifdef SKYWALKER_PRINT_ON
+    LOG(INFO)<< "camera_info_ready_ flag in 1st image: " << camera_info_ready_ << std::endl;
+    LOG(INFO)<< "mask_rcnn_ros::Result::ConstPtr& segmentation_msg: " << segmentation_msg->header.stamp.toSec() << std::endl;
+    LOG(INFO)<< "sensor_msgs::Image::ConstPtr& rgb_msg: " << rgb_msg->header.stamp.toSec() << std::endl;
+
+    LOG(INFO)<< "AAAAAAAAAAAAAAAAAAAAAAAAAAAAA mask sizes: " << segmentation_msg->masks.size() << std::endl;
+
+
+    for (size_t i = 0u; i < segmentation_msg->masks.size(); ++i) {
+        cv_bridge::CvImagePtr cv_mask_image;
+        cv_mask_image = cv_bridge::toCvCopy(segmentation_msg->masks[i],
+                                            sensor_msgs::image_encodings::MONO8);
+
+        //LOG(INFO)<< "cv_mask_image : " << cv_mask_image->image.clone() << std::endl;
+        //LOG(INFO)<< "writing images: " << i << std::endl;
+        //LOG(INFO)<< "mask frame_id: " << cv_mask_image->header.frame_id << std::endl;
+        //LOG(INFO)<< "mask time stamp: " << cv_mask_image->header.stamp.toSec() << std::endl;
+        //LOG(INFO)<< "class id : " << segmentation_msg->class_ids[i] << std::endl;
+        cv::imwrite("/home/zhiliu/Documents/catkin_ws_VoSM/outputs/" + cv_mask_image->header.frame_id + "_"  + std::to_string(i) + "_" + std::to_string(cv_mask_image->header.stamp.toSec()) + "_mask.jpg", cv_mask_image->image.clone());
+      }
+#endif
+    
     if (camera_info_ready_) {
       cv_bridge::CvImagePtr cv_rgb_image(new cv_bridge::CvImage);
       cv_rgb_image = cv_bridge::toCvCopy(rgb_msg, rgb_msg->encoding);
@@ -552,6 +653,17 @@ class DepthSegmentationNode {
       cv_bridge::CvImagePtr cv_depth_image(new cv_bridge::CvImage);
       cv::Mat rescaled_depth, dilated_rescaled_depth, bw_image, mask, depth_map,
           normal_map, edge_map;
+
+
+#ifdef SKYWALKER_PRINT_ON
+      //static const std::string kWindowName = "RawcolorImage";
+      //cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
+      //cv::imshow(kWindowName, cv_rgb_image->image);
+      //cv::waitKey(1);
+
+      cv::imwrite("/home/zhiliu/Documents/catkin_ws_VoSM/outputs/" + cv_rgb_image->header.frame_id + "_" + std::to_string(cv_rgb_image->header.stamp.toSec()) + "_image.jpg", cv_rgb_image->image);
+#endif
+
       preprocess(depth_msg, rgb_msg, &rescaled_depth, &dilated_rescaled_depth,
                  cv_rgb_image, cv_depth_image, &bw_image, &mask);
       if (!camera_tracker_.getRgbImage().empty() &&
@@ -560,6 +672,10 @@ class DepthSegmentationNode {
         computeEdgeMap(depth_msg, rgb_msg, dilated_rescaled_depth, cv_rgb_image,
                        cv_depth_image, bw_image, mask, &depth_map, &normal_map,
                        &edge_map);
+
+#ifdef SKYWALKER_PRINT_ON
+        cv::imwrite("/home/zhiliu/Documents/catkin_ws_VoSM/outputs/" + std::to_string(cv_rgb_image->header.stamp.toSec()) + "_edge_map.jpg", edge_map);
+#endif
 
         cv::Mat label_map(edge_map.size(), CV_32FC1);
         cv::Mat remove_no_values =
@@ -575,6 +691,19 @@ class DepthSegmentationNode {
                                   normal_map, &label_map, &segment_masks,
                                   &segments);
 
+#ifdef SKYWALKER_PRINT_ON
+        if (segments.size() > 0u) {
+          for (size_t i = 0u; i < segments.size(); ++i) {
+            cv::imwrite("/home/zhiliu/Documents/catkin_ws_VoSM/outputs/" + std::to_string(cv_rgb_image->header.stamp.toSec()) + "_" + std::to_string(i) + "_segment_masks.jpg", segment_masks[i]);
+	  }
+	}
+#endif
+
+#ifdef SKYWALKER_PRINT_ON
+        cv::imwrite("/home/zhiliu/Documents/catkin_ws_VoSM/outputs/" + std::to_string(cv_rgb_image->header.stamp.toSec()) + "_label_map.jpg", label_map);
+        // show label map
+        //LOG(INFO)<< "cv_label_map : " << label_map << std::endl;
+#endif
         if (segments.size() > 0u) {
           publish_segments(segments, depth_msg->header);
         }
@@ -593,6 +722,11 @@ class DepthSegmentationNode {
   void cameraInfoCallback(
       const sensor_msgs::CameraInfo::ConstPtr& depth_camera_info_msg,
       const sensor_msgs::CameraInfo::ConstPtr& rgb_camera_info_msg) {
+#ifdef SKYWALKER_PRINT_ON
+    LOG(INFO)<< "cameraInfoCallback, camera_info_ready_: " << camera_info_ready_ << std::endl;
+    //LOG(INFO)<< "CameraInfo::ConstPtr& depth_camera_info_msg: " << depth_camera_info_msg->header.stamp.toSec() << std::endl;
+    LOG(INFO)<< "CameraInfo::ConstPtr& rgb_camera_info_msg: " << rgb_camera_info_msg->header.stamp.toSec() << std::endl;
+#endif
     if (camera_info_ready_) {
       return;
     }
@@ -600,6 +734,7 @@ class DepthSegmentationNode {
     sensor_msgs::CameraInfo depth_info;
     depth_info = *depth_camera_info_msg;
     Eigen::Vector2d depth_image_size(depth_info.width, depth_info.height);
+
 
     cv::Mat K_depth = cv::Mat::eye(3, 3, CV_32FC1);
     K_depth.at<float>(0, 0) = depth_info.K[0];
@@ -610,6 +745,16 @@ class DepthSegmentationNode {
 
     depth_camera_.initialize(depth_image_size.x(), depth_image_size.y(),
                              CV_32FC1, K_depth);
+
+
+#ifdef SKYWALKER_PRINT_ON
+    // skywalker
+    //LOG(INFO)<< "depth_info.width: " << depth_info.width << std::endl;
+    //LOG(INFO)<< "depth_info.height: " << depth_info.height << std::endl;
+
+    //LOG(INFO)<< "depth_info K_depth: " << K_depth << std::endl;
+#endif
+
 
     sensor_msgs::CameraInfo rgb_info;
     rgb_info = *rgb_camera_info_msg;
@@ -625,6 +770,15 @@ class DepthSegmentationNode {
     rgb_camera_.initialize(rgb_image_size.x(), rgb_image_size.y(), CV_8UC1,
                            K_rgb);
 
+
+#ifdef SKYWALKER_PRINT_ON
+    //LOG(INFO)<< "rgb_info.width: " << rgb_info.width << std::endl;
+    //LOG(INFO)<< "rgb_info.height: " << rgb_info.height << std::endl;
+
+    //LOG(INFO)<< "rgb_info K_rgb: " << K_rgb << std::endl;
+#endif
+
+
     depth_segmenter_.initialize();
     camera_tracker_.initialize(
         camera_tracker_.kCameraTrackerNames
@@ -635,8 +789,20 @@ class DepthSegmentationNode {
 };
 
 int main(int argc, char** argv) {
+  //google::SetLogDestination(google::GLOG_INFO, "");
+  // this one has to be called before the init
+  FLAGS_log_dir = "/home/zhiliu/Documents/catkin_ws_VoSM/outputs/logs/";
+
   google::InitGoogleLogging(argv[0]);
+  //FLAGS_stderrthreshold = 0;
+
+  // The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
+  //FLAGS_stderrthreshold = 1;
   FLAGS_stderrthreshold = 0;
+  // not only log file also stderr
+  FLAGS_alsologtostderr = true;
+  // set the path for log files 
+
 
   LOG(INFO) << "Starting depth segmentation ... ";
   ros::init(argc, argv, "depth_segmentation_node");

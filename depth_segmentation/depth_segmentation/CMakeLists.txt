@@ -57,6 +57,9 @@ if (WITH_MASKRCNNROS)
   endif()
 endif()
 
+#add_definitions(-DSKYWALKER_PRINT_ON)
+add_definitions(-DDISPLAY_DEPTH_IMAGES)
+
 
 cs_add_library(${PROJECT_NAME}
   src/depth_segmentation.cpp
@@ -65,7 +68,7 @@ target_link_libraries(${PROJECT_NAME} ${OpenMP_LIBS})
 target_compile_options(${PROJECT_NAME} PRIVATE ${OpenMP_FLAGS})
 
 
-# add_definitions(-DWRITE_IMAGES)
+add_definitions(-DWRITE_IMAGES)
 cs_add_executable(${PROJECT_NAME}_node
   src/depth_segmentation_node.cpp
 )

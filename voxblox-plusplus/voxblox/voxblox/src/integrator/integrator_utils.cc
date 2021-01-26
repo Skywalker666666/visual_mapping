@@ -56,8 +56,22 @@ size_t MixedThreadSafeIndex::getNextIndexImpl(size_t sequential_idx) {
     return sequential_idx;
   }
 
+#ifdef SKYWALKER_PRINT_ON
+  //LOG(INFO)<< "BinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBinBin: " << std::endl;
+  //LOG(INFO)<< "sequential_idx:   " << sequential_idx << std::endl;
+  //LOG(INFO)<< "number_of_groups_:   " << number_of_groups_ << std::endl;
+#endif
+
   const size_t group_num = sequential_idx % number_of_groups_;
   const size_t position_in_group = sequential_idx / number_of_groups_;
+  
+#ifdef SKYWALKER_PRINT_ON
+  //LOG(INFO)<< "group_num:   " << group_num << std::endl;
+  //LOG(INFO)<< "position_in_group:   " << position_in_group << std::endl;
+  //size_t final_index_return = group_num * step_size_ + position_in_group;
+  //LOG(INFO)<< "final_return:   " << final_index_return << std::endl;
+#endif
+
 
   return group_num * step_size_ + position_in_group;
 }

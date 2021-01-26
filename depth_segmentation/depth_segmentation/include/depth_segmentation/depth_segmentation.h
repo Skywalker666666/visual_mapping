@@ -107,7 +107,8 @@ class CameraTracker {
   inline RgbCamera getRgbCamera() const { return rgb_camera_; }
 
   void visualize(const cv::Mat old_depth_image,
-                 const cv::Mat new_depth_image) const;
+                 const cv::Mat new_depth_image,
+		 const std::string filename) const;
 
   enum CameraTrackerType {
     kRgbdICPOdometry = 0,

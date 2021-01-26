@@ -90,6 +90,13 @@ void TsdfIntegratorBase::setLayer(Layer<TsdfVoxel>* layer) {
 TsdfVoxel* TsdfIntegratorBase::allocateStorageAndGetVoxelPtr(
     const GlobalIndex& global_voxel_idx, Block<TsdfVoxel>::Ptr* last_block,
     BlockIndex* last_block_idx) {
+#ifdef SKYWALKER_PRINT_ON
+    //LOG(INFO)<< "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD" << std::endl;
+    //LOG(INFO)<< "DCHECK is on or off: " << std::to_string(last_block_idx != nullptr) << std::endl;
+    //LOG(INFO)<< "last_block_idx: " << last_block_idx << std::endl;
+#endif
+
+  
   DCHECK(last_block != nullptr);
   DCHECK(last_block_idx != nullptr);
 

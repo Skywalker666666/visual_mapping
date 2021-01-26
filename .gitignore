@@ -25,11 +25,8 @@ mask_rcnn_ros/src/mask_rcnn_ros/.ipynb_checkpoints/
 mask_rcnn_ros/src/mask_rcnn_ros/__pycache__/
 mask_rcnn_ros/src/mask_rcnn_ros/mask_rcnn_coco.h5
 mask_rcnn_ros/src/mask_rcnn_ros/*.pyc
-
-
+mask_rcnn_ros/src/mask_rcnn_ros/coco.pyc
 *.pyc
-
-
 
 mask_rcnn_ros/bags/rgbd_dataset_freiburg3_long_office_household.bag
 
