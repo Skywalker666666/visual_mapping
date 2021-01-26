@@ -116,7 +116,7 @@ void Visualizer::visualizeMesh() {
                                                  "meshes", 0);
         }
         pcl_visualizers[index]->saveScreenshot(
-            std::to_string(index) + "/frame_" + std::to_string(frame_count_) +
+            std::to_string(index) + "_frame_" + std::to_string(frame_count_) +
             ".png");
       }
       frame_count_++;
