@@ -16,7 +16,6 @@ from mask_rcnn_ros import model as modellib
 from mask_rcnn_ros import visualize
 from mask_rcnn_ros.msg import Result
 
-
 # Local path to trained weights file
 ROS_HOME = os.environ.get('ROS_HOME', os.path.join(os.environ['HOME'], '.ros'))
 COCO_MODEL_PATH = os.path.join(ROS_HOME, 'mask_rcnn_coco.h5')
@@ -102,6 +101,9 @@ class MaskRCNNNode(object):
                 result_msg = self._build_result_msg(msg, result)
                 self._result_pub.publish(result_msg)
 
+                visualize_img = self._visualize(result, np_image, msg.header)
+                 
+                rospy.loginfo("-----------------------------------Run visualization")
                 # Visualize results
                 if self._visualization:
                     cv_result = self._visualize_plt(result, np_image)
@@ -141,7 +143,7 @@ class MaskRCNNNode(object):
             result_msg.masks.append(mask)
         return result_msg
 
-    def _visualize(self, result, image):
+    def _visualize(self, result, image, msg_header):
         from matplotlib.backends.backend_agg import FigureCanvasAgg
         from matplotlib.figure import Figure
 
@@ -156,8 +158,19 @@ class MaskRCNNNode(object):
         canvas.draw()
         result = np.fromstring(canvas.tostring_rgb(), dtype='uint8')
 
+
         _, _, w, h = fig.bbox.bounds
         result = result.reshape((int(h), int(w), 3))
+
+        from PIL import Image
+        ss, (width, height) = canvas.print_to_buffer()
+        im = Image.frombytes("RGBA", (width, height), ss)
+        # uncomment following lines if you want to see your detection result during your running 
+        #im.show()
+
+        im.save("mask_rcnn_result_" + str(msg_header.stamp.to_sec()) + ".png")
+
+
         return result
 
     def _get_fig_ax(self):

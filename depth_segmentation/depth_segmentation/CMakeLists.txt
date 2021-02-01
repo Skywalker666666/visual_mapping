@@ -58,7 +58,7 @@ if (WITH_MASKRCNNROS)
 endif()
 
 #add_definitions(-DSKYWALKER_PRINT_ON)
-add_definitions(-DDISPLAY_DEPTH_IMAGES)
+#add_definitions(-DDISPLAY_DEPTH_IMAGES)
 
 
 cs_add_library(${PROJECT_NAME}

@@ -31,6 +31,11 @@ mask_rcnn_ros/src/mask_rcnn_ros/coco.pyc
 mask_rcnn_ros/bags/rgbd_dataset_freiburg3_long_office_household.bag
 
 
+psp_semseg_ros/src/psp_semseg_ros/__pycache__/
+psp_semseg_ros/src/psp_semseg_ros/*.pyc
+
+
+
 # Prerequisites
 *.d
 

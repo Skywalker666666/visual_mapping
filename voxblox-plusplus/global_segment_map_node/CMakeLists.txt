@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(gsm_node)
 
 
-add_definitions(-DSKYWALKER_PRINT_ON)
+#add_definitions(-DSKYWALKER_PRINT_ON)
 
 add_definitions(-std=c++14)
 if (NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
