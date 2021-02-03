@@ -133,7 +133,7 @@ class DepthSegmentationNode {
 #endif
 
 
-#endif
+#endifa
     } else {
       image_sync_policy_ = new message_filters::Synchronizer<ImageSyncPolicy>(
           ImageSyncPolicy(kQueueSize), *depth_image_sub_, *rgb_image_sub_);
@@ -491,7 +491,7 @@ class DepthSegmentationNode {
     //    cv_rgb_image->image);
     //cv::imwrite(
     //    std::to_string(cv_rgb_image->header.stamp.toSec()) + "_bw_image.png",
-    //    bw_imagea);
+    //    bw_image);
     //cv::imwrite(
     //    std::to_string(depth_msg->header.stamp.toSec()) + "_depth_image.png",
     //    rescaled_depth);
@@ -655,14 +655,14 @@ class DepthSegmentationNode {
           normal_map, edge_map;
 
 
-//#ifdef SKYWALKER_PRINT_ON
+#ifdef SKYWALKER_PRINT_ON
       //static const std::string kWindowName = "RawcolorImage";
       //cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
       //cv::imshow(kWindowName, cv_rgb_image->image);
       //cv::waitKey(1);
 
       cv::imwrite("/home/zhiliu/Documents/catkin_ws_VoSM/outputs/" + cv_rgb_image->header.frame_id + "_" + std::to_string(cv_rgb_image->header.stamp.toSec()) + "_image.jpg", cv_rgb_image->image);
-//#endif
+#endif
 
       preprocess(depth_msg, rgb_msg, &rescaled_depth, &dilated_rescaled_depth,
                  cv_rgb_image, cv_depth_image, &bw_image, &mask);

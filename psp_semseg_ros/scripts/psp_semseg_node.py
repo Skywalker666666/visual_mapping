@@ -5,9 +5,9 @@ import numpy as np
 
 import sys
 #ros_path = '/opt/ros/melodic/lib/python2.7/dist-packages'
-
 ros_path2 = '/home/zhiliu/Documents/catkin_ws_VoSM/devel/lib/python2.7/dist-packages'
 ros_path3 = '/home/zhiliu/Documents/Weapons/catkin_workspace_bridge/install/lib/python3.7/site-packages'
+
 #if ros_path in sys.path:
 #    sys.path.remove(ros_path)
 
@@ -25,6 +25,8 @@ import matplotlib.pyplot as plt
 import rospy
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import RegionOfInterest
+sys.path.append(ros_path2)
+
 
 #from mask_rcnn_ros import coco
 #from mask_rcnn_ros import utils
@@ -33,9 +35,10 @@ from sensor_msgs.msg import RegionOfInterest
 #from mask_rcnn_ros.msg import Result
 
 
-sys.path.append(ros_path2)
 
 from psp_semseg_ros.predict_semantic_single_img import SemanticSegmentation
+from psp_semseg_ros.msg import Result
+from psp_semseg_ros import visualize
 
 import mxnet as mx
 
@@ -69,13 +72,12 @@ CLASSES = [92, 93, 95, 100, 107, 109, 112, 118, 119, 122, 125, 128, 130, 133, 13
            187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200]
 
 
-'''
-class InferenceConfig():
-    # Set batch size to 1 since we'll be running inference on
-    # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
-    GPU_COUNT = 1
-    IMAGES_PER_GPU = 1
-'''
+##class InferenceConfig():
+##    # Set batch size to 1 since we'll be running inference on
+##    # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
+##    GPU_COUNT = 1
+##    IMAGES_PER_GPU = 1
+
 
 class PSPSemSegNode(object):
     def __init__(self):
@@ -87,12 +89,10 @@ class PSPSemSegNode(object):
         self._visualization = rospy.get_param('~visualization', True)
 
         # Create model object in inference mode.
-        self._model = SemanticSegmentation(model_path=PSP_MODEL_PATH, no_cuda=False)
-
-
-
-        self._class_names = rospy.get_param('~class_names', CLASS_NAMES)
-
+        self._model = SemanticSegmentation(model_path=PSP_MODEL_PATH, no_cuda=True)
+        # class name for all classes defined in dataset
+        self._classes_names = rospy.get_param('~class_names', CLASS_NAMES)
+        self._classes =  CLASSES
         self._last_msg = None
         self._msg_lock = threading.Lock()
 
@@ -101,7 +101,7 @@ class PSPSemSegNode(object):
         self._publish_rate = rospy.get_param('~publish_rate', 100)
 
     def run(self):
-        #self._result_pub = rospy.Publisher('~result', Result, queue_size=1)
+        self._result_pub = rospy.Publisher('~psp_result', Result, queue_size=1)
         vis_pub = rospy.Publisher('~visualization', Image, queue_size=1)
         rospy.Subscriber('~input', Image,
                          self._image_callback, queue_size=1)
@@ -118,58 +118,60 @@ class PSPSemSegNode(object):
 
             if msg is not None:
                 np_image = self._cv_bridge.imgmsg_to_cv2(msg, 'bgr8')
-                #np_image = []
+                rospy.loginfo("-------------------------------Received the image")
                 # Run detection
-                print("Run detection")
                 result = self._model.predict(mx.nd.array(np_image))
+                rospy.loginfo("-------------------------------Detection performed")
 
-                rospy.loginfo("-------------------------------Received the image:")
-                rospy.loginfo(str(result.shape))
+                #rospy.loginfo(str(result.shape))
 
-                #result_msg = self._build_result_msg(msg, result)
-                #self._result_pub.publish(result_msg)
+                result_msg = self._build_result_msg(msg, result)
+                self._result_pub.publish(result_msg)
+
+
 
                 # Visualize results
                 if self._visualization:
-                    rospy.loginfo("Visualization is not implemented yet.")
+                    visualize_img = self._visualize(result, np_image, msg.header)
+
+                    rospy.loginfo("Visualization is not implemented yet, but we saved rsult image")
                     #cv_result = self._visualize_plt(result, np_image)
                     #image_msg = self._cv_bridge.cv2_to_imgmsg(cv_result, 'bgr8')
                     #vis_pub.publish(image_msg)
 
             rate.sleep()
 
-#    def _build_result_msg(self, msg, result):
-#        result_msg = Result()
-#        result_msg.header = msg.header
-#        for i, (y1, x1, y2, x2) in enumerate(result['rois']):
-#            box = RegionOfInterest()
-#            box.x_offset = np.asscalar(x1)
-#            box.y_offset = np.asscalar(y1)
-#            box.height = np.asscalar(y2 - y1)
-#            box.width = np.asscalar(x2 - x1)
-#            result_msg.boxes.append(box)
-#
-#            class_id = result['class_ids'][i]
-#            result_msg.class_ids.append(class_id)
-#
-#            class_name = self._class_names[class_id]
-#            result_msg.class_names.append(class_name)
-#
-#            score = result['scores'][i]
-#            result_msg.scores.append(score)
-#
-#            mask = Image()
-#            mask.header = msg.header
-#            mask.height = result['masks'].shape[0]
-#            mask.width = result['masks'].shape[1]
-#            mask.encoding = "mono8"
-#            mask.is_bigendian = False
-#            mask.step = mask.width
-#            mask.data = (result['masks'][:, :, i] * 255).tobytes()
-#            result_msg.masks.append(mask)
-#        return result_msg
+    def _build_result_msg(self, msg, result):
+        result_msg = Result()
+        result_msg.header = msg.header
+        predicted_categories = list(np.unique(result))
 
-#    def _visualize(self, result, image):
+        for i, category in enumerate(predicted_categories):
+            print('Category: ')
+            print(category)
+            print("category_id: self.classes[int(category)]")
+            print(self._classes[int(category)])
+            print(self._classes_names[int(category)])
+            # TODO: The category 0 is not 'banner' as expected... Need to look at the training.
+            if category == 0.0: continue
+
+            result_msg.class_ids.append(self._classes[int(category)])
+            result_msg.class_names.append(self._classes_names[int(category)])
+
+            mask = Image()
+            mask.header = msg.header
+            mask.height = result.shape[0]
+            mask.width = result.shape[1]
+            mask.encoding = "mono8"
+            mask.is_bigendian = False
+            mask.step = mask.width
+            binary_mask = (np.isin(result, category) * 1)
+            mask.data = (binary_mask * 255).tobytes()
+            result_msg.masks.append(mask)
+        return result_msg
+
+
+    def _visualize(self, result, image, msg_header):
 #        from matplotlib.backends.backend_agg import FigureCanvasAgg
 #        from matplotlib.figure import Figure
 #
@@ -187,6 +189,9 @@ class PSPSemSegNode(object):
 #        _, _, w, h = fig.bbox.bounds
 #        result = result.reshape((int(h), int(w), 3))
 #        return result
+
+        visualize.show_semseg_result(result, msg_header, self._classes, self._classes_names)
+
 
     def _get_fig_ax(self):
         """Return a Matplotlib Axes array to be used in

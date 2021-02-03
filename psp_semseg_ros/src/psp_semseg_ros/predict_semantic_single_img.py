@@ -45,11 +45,19 @@ class SemanticSegmentation(Predict):
     #def __init__(self, model_path: str = '../../models/PSP_Resnet50_1epoch_auxon_batchs1_lr1en5.params',
     def __init__(self, model_path, no_cuda):
 
+        print("no_cuda: " + str(no_cuda) )
         Predict.__init__(self, no_cuda)
         self.model_path = model_path
         self.model = self._load_model()
-        ngpus=len(mx.test_utils.list_gpus())
-        self.ctx = [mx.gpu(i) for i in range(ngpus)]  
+      
+        if no_cuda:
+            print('Using CPU')
+            self.ctx = [mx.cpu(0)]
+        else:
+            ngpus=len(mx.test_utils.list_gpus())
+            print('Number of GPUs:', ngpus)
+            self.ctx = [mx.gpu(i) for i in range(ngpus)]
+        print(self.ctx)
 
     @property
     def classes_name(self):
@@ -95,6 +103,7 @@ class SemanticSegmentation(Predict):
         """
         model = model_zoo.PSPNet(nclass=53, backbone='resnet50', pretrained_base=False, ctx=self.ctx)
         model.load_parameters(self.model_path)
+        print("model_path: " + self.model_path)
         return model
 
     def predict(self, img):
@@ -136,33 +145,33 @@ class SemanticSegmentation(Predict):
 
         #method 1:
         # comes with original reference code, demo()
-        #img = img.expand_dims(0).as_in_context(args.ctx[0])
-        #output = model.demo(img)
-        #predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
+        img = img.expand_dims(0).as_in_context(self.ctx[0])
+        output = model.demo(img)
+        predict_result = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
 
         #method 2: (prefered)
         # support multiple input image size
-        img = img.expand_dims(0).as_in_context(self.ctx[0])
-        evaluator = MultiEvalModel(model, 53, ctx_list=self.ctx)
-        output = evaluator.parallel_forward(img)
-        predict_result = mx.nd.squeeze(mx.nd.argmax(output[0], 1)).asnumpy()
+        ##img = img.expand_dims(0).as_in_context(self.ctx[0])
+        ##evaluator = MultiEvalModel(model, 53, ctx_list=self.ctx)
+        ##output = evaluator.parallel_forward(img)
+        ##predict_result = mx.nd.squeeze(mx.nd.argmax(output[0], 1)).asnumpy()
 
  
         #method 3: # a quick version for no cuda
         # but this one is so slow
         # after read source code, we figure out this one
-        #img2 = img.as_in_context(args.ctx[0])
-        #print(args.ctx)
-        #evaluator = MultiEvalModel(model, 53, ctx_list=args.ctx)
+        #img2 = img.as_in_context(self.ctx[0])
+        #print(self.ctx)
+        #evaluator = MultiEvalModel(model, 53, ctx_list=self.ctx)
         #output = evaluator(img2)
         #predict = mx.nd.squeeze(mx.nd.argmax(output, 1)).asnumpy()
 
 
         #method 4:
         # this method can only generate 480 x 480, cropped version
-        #img = img.expand_dims(0).as_in_context(args.ctx[0])
-        #evaluator = DataParallelModel(SegEvalModel(model), args.ctx)
-        #outputs = evaluator(img.astype(args.dtype, copy=False))
+        #img = img.expand_dims(0).as_in_context(self.ctx[0])
+        #evaluator = DataParallelModel(SegEvalModel(model), self.ctx)
+        #outputs = evaluator(img.astype(self.dtype, copy=False))
         #output = [x[0] for x in outputs]
         #predict = mx.nd.squeeze(mx.nd.argmax(output[0], 1)).asnumpy()
 
