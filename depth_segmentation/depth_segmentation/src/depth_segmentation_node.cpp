@@ -133,7 +133,7 @@ class DepthSegmentationNode {
 #endif
 
 
-#endifa
+#endif
     } else {
       image_sync_policy_ = new message_filters::Synchronizer<ImageSyncPolicy>(
           ImageSyncPolicy(kQueueSize), *depth_image_sub_, *rgb_image_sub_);

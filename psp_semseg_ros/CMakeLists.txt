@@ -25,6 +25,7 @@ catkin_package(CATKIN_DEPENDS message_runtime)
 
 install(PROGRAMS
   scripts/psp_semseg_node.py
+  scripts/psp_semseg_2_tf_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

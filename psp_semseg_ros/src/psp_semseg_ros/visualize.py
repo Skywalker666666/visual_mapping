@@ -21,7 +21,7 @@ sys.path.insert(1, '/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/Van
 
 from panopticapi.utils import IdGenerator, id2rgb, save_json
 
-def show_semseg_result(result,msg_header, classes_id, classes_names):
+def show_semseg_result(result, msg_header, classes_id, classes_names):
 
     folder2 = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/VanillaPanopticSeg/src/panopticapi/"
     file_name2 = "panoptic_coco_categories.json"
