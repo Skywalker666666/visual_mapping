@@ -5,7 +5,7 @@ from math import ceil
 
 import sys
 ros_path2 = '/home/zhiliu/Documents/catkin_ws_VoSM/devel/lib/python2.7/dist-packages'
-ros_path3 = '/home/zhiliu/Documents/Weapons/catkin_workspace_bridge/install/lib/python3.7/site-packages'
+ros_path3 = '/home/zhiliu/Documents/Weapons/catkin_workspace_bridge_py3p5/install/lib/python3.5/site-packages'
 if ros_path2 in sys.path:
     sys.path.remove(ros_path2)
 

@@ -6,7 +6,7 @@ from os.path import join, isfile
 import sys
 #ros_path = '/opt/ros/melodic/lib/python2.7/dist-packages'
 ros_path2 = '/home/zhiliu/Documents/catkin_ws_VoSM/devel/lib/python2.7/dist-packages'
-ros_path3 = '/home/zhiliu/Documents/Weapons/catkin_workspace_bridge/install/lib/python3.7/site-packages'
+ros_path3 = '/home/zhiliu/Documents/Weapons/catkin_workspace_bridge_py3p5/install/lib/python3.5/site-packages'
 if ros_path2 in sys.path:
     sys.path.remove(ros_path2)
 
@@ -19,7 +19,6 @@ from keras import backend as K
 from keras.models import model_from_json, load_model
 import tensorflow as tf
 
-import layers_builder_2 as layers
 from keras.utils.generic_utils import CustomObjectScope
 import cv2
 import math
@@ -31,9 +30,9 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 from imageio import imread
-
 sys.path.append(ros_path2)
 
+import psp_semseg_ros.layers_builder_2 as layers
 
 
 # These are the means for the ImageNet pretrained ResNet
@@ -47,8 +46,8 @@ class PSPNet(object):
         self.input_shape = input_shape
         self.num_classes = nb_classes
 
-        json_path = join("/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/VanillaPanopticSeg_PSP2/PSPNet-Keras-tensorflow/weights/weights", "keras", weights + ".json")
-        h5_path = join("/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/VanillaPanopticSeg_PSP2/PSPNet-Keras-tensorflow/weights/weights", "keras", weights + ".h5")
+        json_path = join("/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/VanillaPanopticSeg_PSP2/PSPNet-Keras-tensorflow/weights", "keras", weights + ".json")
+        h5_path = join("/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/VanillaPanopticSeg_PSP2/PSPNet-Keras-tensorflow/weights", "keras", weights + ".h5")
         if 'pspnet' in weights:
             if os.path.isfile(json_path) and os.path.isfile(h5_path):
                 print("Keras model & weights found, loading...")
@@ -194,9 +193,9 @@ class PSPNet(object):
         return prediction
 
     def set_npy_weights(self, weights_path):
-        npy_weights_path = join("weights", "npy", weights_path + ".npy")
-        json_path = join("weights", "keras", weights_path + ".json")
-        h5_path = join("weights", "keras", weights_path + ".h5")
+        npy_weights_path = join("/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/VanillaPanopticSeg_PSP2/PSPNet-Keras-tensorflow/weights", "npy", weights_path + ".npy")
+        json_path = join("/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/VanillaPanopticSeg_PSP2/PSPNet-Keras-tensorflow/weights", "keras", weights_path + ".json")
+        h5_path = join("/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/VanillaPanopticSeg_PSP2/PSPNet-Keras-tensorflow/weights", "keras", weights_path + ".h5")
 
         print("Importing weights from %s" % npy_weights_path)
         weights = np.load(npy_weights_path, encoding='bytes').item()

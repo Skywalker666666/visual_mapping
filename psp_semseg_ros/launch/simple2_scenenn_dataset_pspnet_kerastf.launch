@@ -1,0 +1,13 @@
+<launch>
+  <arg name="play_bag" default="true" />
+  <arg name="bag_file" default="/path/to/data.bag"/>
+  <arg name="visualize" default="true" />
+
+  <node name="psp_semseg" pkg="psp_semseg_ros" type="psp_semseg_2_tf_node.py" output="screen">
+      <remap from="~input" to="/camera/rgb/image_raw" />
+      <param name="~visualization" value="$(arg visualize)" />
+  </node>
+
+  <node name="bag" pkg="rosbag" type="play" output="screen" args="--delay 5 -r 0.2 $(arg bag_file)" if="$(arg play_bag)">
+  </node>
+</launch>

@@ -7,7 +7,9 @@ import threading
 import sys
 #ros_path = '/opt/ros/melodic/lib/python2.7/dist-packages'
 ros_path2 = '/home/zhiliu/Documents/catkin_ws_VoSM/devel/lib/python2.7/dist-packages'
-ros_path3 = '/home/zhiliu/Documents/Weapons/catkin_workspace_bridge/install/lib/python3.7/site-packages'
+#ros_path3 = '/home/zhiliu/Documents/Weapons/catkin_workspace_bridge/install/lib/python3.7/site-packages'
+ros_path3 = '/home/zhiliu/Documents/Weapons/catkin_workspace_bridge_py3p5/install/lib/python3.5/site-packages'
+
 
 #if ros_path in sys.path:
 #    sys.path.remove(ros_path)
@@ -36,7 +38,6 @@ from keras.models import model_from_json, load_model
 import tensorflow as tf
 
 from glob import glob
-from utils2 import utils
 from keras.utils.generic_utils import CustomObjectScope
 
 import math
@@ -44,11 +45,11 @@ import math
 sys.path.append(ros_path2)
 
 
-from psp_semseg_ros.predict_semantic_single_img import SemanticSegmentation
+#from psp_semseg_ros.predict_semantic_single_img import SemanticSegmentation
 from psp_semseg_ros.msg import Result
-from psp_semseg_ros import visualize
-
-from psp_semseg_ros.pspnet_tf_2 import PSPNet
+#from psp_semseg_ros import visualize
+from psp_semseg_ros.pspnet_tf_2 import PSPNet50
+from psp_semseg_ros.utils_2 import utils
 
 
 
@@ -56,7 +57,7 @@ from psp_semseg_ros.pspnet_tf_2 import PSPNet
 # Local path to trained weights file
 #ROS_HOME = os.environ.get('ROS_HOME', os.path.join(os.environ['HOME'], '.ros'))
 
-PSP_TF_MODEL_PATH = os.path.join('/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/VanillaPanopticSeg/src/trainers/runs/coco/psp/default/', 'PSP_Resnet50_epoch2of2_auxon_batchs4_lr1en3.params')
+#PSP_TF_MODEL_PATH = os.path.join('/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/VanillaPanopticSeg/src/trainers/runs/coco/psp/default/', 'PSP_Resnet50_epoch2of2_auxon_batchs4_lr1en3.params')
 
 
 # COCO Class names
@@ -94,18 +95,21 @@ class PSPSemSegNode(object):
 
         #config = InferenceConfig()
         #config.display()
-
+ 
+        # GPU id 0: how many GPU we have for different machine:
         os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+        # CPU only:
+        #os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
-        self._sess = tf.Session()
-        #K.set_session(self._sess)
-        
         self._visualization = rospy.get_param('~visualization', True)
 
+
+        self._sess = tf.Session()
+        K.set_session(self._sess)
+
         # Create model object for inference
+        #with self._sess.as_default():
         self._model= PSPNet50(nb_classes=150, input_shape=(473, 473), weights='pspnet50_ade20k')
-
-
 
         # class name for all classes defined in dataset
         #self._classes_names = rospy.get_param('~class_names', CLASS_NAMES)
@@ -126,6 +130,7 @@ class PSPSemSegNode(object):
                          self._image_callback, queue_size=1)
 
         rate = rospy.Rate(self._publish_rate)
+        img_cnt = 0
         while not rospy.is_shutdown():
             if self._msg_lock.acquire(False):
                 msg = self._last_msg
@@ -138,21 +143,23 @@ class PSPSemSegNode(object):
             if msg is not None:
                 np_image = self._cv_bridge.imgmsg_to_cv2(msg, 'bgr8')
                 rospy.loginfo("-------------------------------Received the image")
+                img_cnt = img_cnt + 1
+                print("img_cnt: " + str(img_cnt)) 
                 # Run detection
 
                 EVALUATION_SCALES = [1.0]
+                
 
-                 
-                K.set_session(self._sess)
+                #K.set_session(self._sess)
                 with self._sess.as_default():
-                    probs = self._model.predict_multi_scale(img=np_img, flip_evaluation=True, sliding_evaluation=False, scales=EVALUATION_SCALES)
+                    probs = self._model.predict_multi_scale(img=np_image, flip_evaluation=False, sliding_evaluation=False, scales=EVALUATION_SCALES)
                     rospy.loginfo("-------------------------------Detection performed")
                     
                     cm = np.argmax(probs, axis=2)
                     colored_class_image = utils.color_class_image(cm, 'pspnet50_ade20k')
 
 
-                    filename = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/VanillaPanopticSeg_PSP2/data/predictions/test_result_for_vox_ros/pspnet_semseg_result_" + str(msg_header.stamp.to_sec()) + ".png"
+                    filename = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/VanillaPanopticSeg_PSP2/data/predictions/test_result_for_vox_ros/pspnet_semseg_result_" + str(msg.header.stamp.to_sec()) + ".png"
                     misc.imsave(filename, colored_class_image)
  
 
