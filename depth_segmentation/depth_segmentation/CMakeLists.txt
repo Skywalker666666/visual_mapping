@@ -61,6 +61,10 @@ endif()
 #add_definitions(-DDISPLAY_DEPTH_IMAGES)
 
 
+add_definitions(-DPSPSEMSEGROS_AVAILABLE)
+
+
+
 cs_add_library(${PROJECT_NAME}
   src/depth_segmentation.cpp
 )

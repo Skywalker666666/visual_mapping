@@ -8,6 +8,11 @@
       <param name="~visualization" value="$(arg visualize)" />
   </node>
 
+  <node name="psp_semseg" pkg="psp_semseg_ros" type="psp_semseg_2_tf_node.py" output="screen">
+      <remap from="~input" to="/camera/rgb/image_raw" />
+      <param name="~visualization" value="$(arg visualize)" />
+  </node>
+
   <arg name="depth_segmentation_node_params_name" default="$(find depth_segmentation)/cfg/scenenn_config.yaml"/>
 
   <node name="depth_segmentation_node" pkg="depth_segmentation" type="depth_segmentation_node" output="screen">

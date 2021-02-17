@@ -14,7 +14,8 @@ const static std::string kDepthCameraInfoTopic =
     "/camera/depth_registered/camera_info";
 const static std::string kSemanticInstanceSegmentationTopic =
     "/mask_rcnn/result";
-
+const static std::string kSemanticStuffSegmentationTopic =
+    "/psp_semseg/psp_result";
 const static std::string kTfWorldFrame = "map";
 const static std::string kTfDepthCameraFrame = "camera0";
 

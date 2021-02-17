@@ -21,7 +21,12 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #ifdef MASKRCNNROS_AVAILABLE
+#ifdef PSPSEMSEGROS_AVAILABLE
+#include <psp_semseg_ros/Result.h>
 #include <mask_rcnn_ros/Result.h>
+#else
+#include <mask_rcnn_ros/Result.h>
+#endif
 #endif
 
 #include "depth_segmentation/depth_segmentation.h"
@@ -83,6 +88,10 @@ class DepthSegmentationNode {
         "semantic_instance_segmentation_sub_topic",
         semantic_instance_segmentation_topic_,
         depth_segmentation::kSemanticInstanceSegmentationTopic);
+    node_handle_.param<std::string>(
+        "semantic_stuff_segmentation_sub_topic",
+        semantic_stuff_segmentation_topic_,
+        depth_segmentation::kSemanticStuffSegmentationTopic);    
     node_handle_.param<std::string>("world_frame", world_frame_,
                                     depth_segmentation::kTfWorldFrame);
     node_handle_.param<std::string>("camera_frame", camera_frame_,
@@ -113,10 +122,39 @@ class DepthSegmentationNode {
     }
 #endif
 
+//#ifndef PSPSEMSEGROS_AVAILABLE
+    //if (params_.semantic_instance_segmentation.enable) {
+    //  params_.semantic_instance_segmentation.enable = false;
+    //  ROS_WARN_STREAM(
+    //      "Turning off semantic instance segmentation "
+    //      "as mask_rcnn_ros is disabled.");
+    //}
+    // To do, set a enable flag for pspnet
+//#endif
+
+
+
     if (params_.semantic_instance_segmentation.enable) {
 #ifdef MASKRCNNROS_AVAILABLE
 
+#ifdef PSPSEMSEGROS_AVAILABLE
+      instance_segmentation_sub_ =
+          new message_filters::Subscriber<mask_rcnn_ros::Result>(
+              node_handle_, semantic_instance_segmentation_topic_, 1);
+        
+      stuff_segmentation_sub_ =
+          new message_filters::Subscriber<psp_semseg_ros::Result>(
+              node_handle_, semantic_stuff_segmentation_topic_, 1);        
+        
+      image_panopticseg_sync_policy_ =
+          new message_filters::Synchronizer<ImagePanoSegmentationSyncPolicy>(
+              ImagePanoSegmentationSyncPolicy(kQueueSize), *depth_image_sub_,
+              *rgb_image_sub_, *instance_segmentation_sub_, *stuff_segmentation_sub_);        
 
+      image_panopticseg_sync_policy_->registerCallback(boost::bind(
+          &DepthSegmentationNode::image_PanoSegmentationCallback, this, _1, _2, _3, _4));          
+        
+#else
       instance_segmentation_sub_ =
           new message_filters::Subscriber<mask_rcnn_ros::Result>(
               node_handle_, semantic_instance_segmentation_topic_, 1);
@@ -128,6 +166,9 @@ class DepthSegmentationNode {
 
       image_segmentation_sync_policy_->registerCallback(boost::bind(
           &DepthSegmentationNode::imageSegmentationCallback, this, _1, _2, _3));
+#endif      
+      
+      
 #ifdef SKYWALKER_PRINT_ON
     //LOG(INFO)<< "Register of imageSegmentationCallback is successful" << std::endl;
 #endif
@@ -165,16 +206,28 @@ class DepthSegmentationNode {
   image_transport::ImageTransport image_transport_;
   tf::TransformBroadcaster transform_broadcaster_;
 
-  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,
-                                                          sensor_msgs::Image>
+  typedef message_filters::sync_policies::ApproximateTime<
+      sensor_msgs::Image,
+      sensor_msgs::Image>
       ImageSyncPolicy;
 
 #ifdef MASKRCNNROS_AVAILABLE
+#ifdef PSPSEMSEGROS_AVAILABLE
   typedef message_filters::sync_policies::ApproximateTime<
-      sensor_msgs::Image, sensor_msgs::Image, mask_rcnn_ros::Result>
+      sensor_msgs::Image, 
+      sensor_msgs::Image, 
+      mask_rcnn_ros::Result, 
+      psp_semseg_ros::Result>
+      ImagePanoSegmentationSyncPolicy;
+#else
+  typedef message_filters::sync_policies::ApproximateTime<
+      sensor_msgs::Image, 
+      sensor_msgs::Image, 
+      mask_rcnn_ros::Result>
       ImageSegmentationSyncPolicy;
 #endif
-
+#endif
+      
   typedef message_filters::sync_policies::ApproximateTime<
       sensor_msgs::CameraInfo, sensor_msgs::CameraInfo>
       CameraInfoSyncPolicy;
@@ -195,6 +248,7 @@ class DepthSegmentationNode {
   std::string depth_image_topic_;
   std::string depth_camera_info_topic_;
   std::string semantic_instance_segmentation_topic_;
+  std::string semantic_stuff_segmentation_topic_;  
   std::string world_frame_;
   std::string camera_frame_;
 
@@ -211,12 +265,26 @@ class DepthSegmentationNode {
 
   message_filters::Synchronizer<CameraInfoSyncPolicy>* camera_info_sync_policy_;
 
-#ifdef MASKRCNNROS_AVAILABLE
+#ifdef MASKRCNNROS_AVAILABLE  
+#ifdef PSPSEMSEGROS_AVAILABLE
+  message_filters::Subscriber<mask_rcnn_ros::Result>*
+      instance_segmentation_sub_;  
+  message_filters::Subscriber<psp_semseg_ros::Result>*
+      stuff_segmentation_sub_;
+  message_filters::Synchronizer<ImagePanoSegmentationSyncPolicy>*
+      image_panopticseg_sync_policy_;
+#else
   message_filters::Subscriber<mask_rcnn_ros::Result>*
       instance_segmentation_sub_;
   message_filters::Synchronizer<ImageSegmentationSyncPolicy>*
       image_segmentation_sync_policy_;
 #endif
+#endif
+      
+
+
+      
+      
 
   void publish_tf(const cv::Mat cv_transform, const ros::Time& timestamp) {
     // Rotate such that the world frame initially aligns with the camera_link
@@ -352,6 +420,7 @@ class DepthSegmentationNode {
 
 
 #ifdef SKYWALKER_PRINT_ON
+      // uncomment following lines if 
       //////pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
       //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
 
@@ -409,6 +478,62 @@ class DepthSegmentationNode {
   }
 
 #ifdef MASKRCNNROS_AVAILABLE
+
+
+#ifdef PSPSEMSEGROS_AVAILABLE
+  void semanticStuffSegmentationFromRosMsg(
+      const psp_semseg_ros::Result::ConstPtr& segmentation_msg,
+      depth_segmentation::SemanticStuffSegmentation*
+          semantic_stuff_segmentation) {
+    semantic_stuff_segmentation->masks.reserve(
+        segmentation_msg->masks.size());
+    
+    
+    semantic_stuff_segmentation->labels.reserve(
+        segmentation_msg->masks.size());
+    
+    
+    for (size_t i = 0u; i < segmentation_msg->masks.size(); ++i) {
+      cv_bridge::CvImagePtr cv_mask_image;
+            
+      cv_mask_image = cv_bridge::toCvCopy(segmentation_msg->masks[i],
+                                          sensor_msgs::image_encodings::MONO8);
+      
+      semantic_stuff_segmentation->masks.push_back(
+          cv_mask_image->image.clone());
+      
+      semantic_stuff_segmentation->labels.push_back(
+          segmentation_msg->class_ids[i]);
+      
+      static const std::string kWindowName2 = "Stuff mask";
+      cv::namedWindow(kWindowName2, cv::WINDOW_AUTOSIZE);
+      cv::imshow(kWindowName2, cv_mask_image->image);
+      cv::waitKey(1);      
+    }
+  }
+
+  
+  void semanticInstanceSegmentationFromRosMsg(
+      const mask_rcnn_ros::Result::ConstPtr& segmentation_msg,
+      depth_segmentation::SemanticInstanceSegmentation*
+          semantic_instance_segmentation) {
+    semantic_instance_segmentation->masks.reserve(
+        segmentation_msg->masks.size());
+    semantic_instance_segmentation->labels.reserve(
+        segmentation_msg->masks.size());
+    for (size_t i = 0u; i < segmentation_msg->masks.size(); ++i) {
+      cv_bridge::CvImagePtr cv_mask_image;
+      cv_mask_image = cv_bridge::toCvCopy(segmentation_msg->masks[i],
+                                          sensor_msgs::image_encodings::MONO8);
+      semantic_instance_segmentation->masks.push_back(
+          cv_mask_image->image.clone());
+      semantic_instance_segmentation->labels.push_back(
+          segmentation_msg->class_ids[i]);
+    }
+  }  
+  
+  
+#else
   void semanticInstanceSegmentationFromRosMsg(
       const mask_rcnn_ros::Result::ConstPtr& segmentation_msg,
       depth_segmentation::SemanticInstanceSegmentation*
@@ -428,6 +553,11 @@ class DepthSegmentationNode {
     }
   }
 #endif
+  
+#endif
+
+
+
 
   void preprocess(const sensor_msgs::Image::ConstPtr& depth_msg,
                   const sensor_msgs::Image::ConstPtr& rgb_msg,
@@ -613,6 +743,131 @@ class DepthSegmentationNode {
   }
 
 #ifdef MASKRCNNROS_AVAILABLE
+
+#ifdef PSPSEMSEGROS_AVAILABLE
+  void image_PanoSegmentationCallback(
+      const sensor_msgs::Image::ConstPtr& depth_msg,
+      const sensor_msgs::Image::ConstPtr& rgb_msg,
+      const mask_rcnn_ros::Result::ConstPtr& segmentation_msg,
+      const psp_semseg_ros::Result::ConstPtr& stuff_seg_msg) {
+
+      
+    LOG(INFO)<< "||||||||| MODE: image_PanoSegmentationCallback" << std::endl;
+
+      
+    depth_segmentation::SemanticInstanceSegmentation instance_segmentation;
+    semanticInstanceSegmentationFromRosMsg(segmentation_msg,
+                                           &instance_segmentation);
+
+
+    depth_segmentation::SemanticStuffSegmentation stuff_segmentation;
+    semanticStuffSegmentationFromRosMsg(stuff_seg_msg,
+                                           &stuff_segmentation);    
+    
+
+
+    
+#ifdef SKYWALKER_PRINT_ON
+    LOG(INFO)<< "camera_info_ready_ flag in 1st image: " << camera_info_ready_ << std::endl;
+    LOG(INFO)<< "mask_rcnn_ros::Result::ConstPtr& segmentation_msg: " << segmentation_msg->header.stamp.toSec() << std::endl;
+    LOG(INFO)<< "sensor_msgs::Image::ConstPtr& rgb_msg: " << rgb_msg->header.stamp.toSec() << std::endl;
+
+    LOG(INFO)<< "AAAAAAAAAAAAAAAAAAAAAAAAAAAAA mask sizes: " << segmentation_msg->masks.size() << std::endl;
+
+
+    for (size_t i = 0u; i < segmentation_msg->masks.size(); ++i) {
+        cv_bridge::CvImagePtr cv_mask_image;
+        cv_mask_image = cv_bridge::toCvCopy(segmentation_msg->masks[i],
+                                            sensor_msgs::image_encodings::MONO8);
+
+        //LOG(INFO)<< "cv_mask_image : " << cv_mask_image->image.clone() << std::endl;
+        //LOG(INFO)<< "writing images: " << i << std::endl;
+        //LOG(INFO)<< "mask frame_id: " << cv_mask_image->header.frame_id << std::endl;
+        //LOG(INFO)<< "mask time stamp: " << cv_mask_image->header.stamp.toSec() << std::endl;
+        //LOG(INFO)<< "class id : " << segmentation_msg->class_ids[i] << std::endl;
+        cv::imwrite("/home/zhiliu/Documents/catkin_ws_VoSM/outputs/" + cv_mask_image->header.frame_id + "_"  + std::to_string(i) + "_" + std::to_string(cv_mask_image->header.stamp.toSec()) + "_mask.jpg", cv_mask_image->image.clone());
+      }
+#endif
+    
+    if (camera_info_ready_) {
+      cv_bridge::CvImagePtr cv_rgb_image(new cv_bridge::CvImage);
+      cv_rgb_image = cv_bridge::toCvCopy(rgb_msg, rgb_msg->encoding);
+      if (rgb_msg->encoding == sensor_msgs::image_encodings::BGR8) {
+        cv::cvtColor(cv_rgb_image->image, cv_rgb_image->image, CV_BGR2RGB);
+      }
+
+      cv_bridge::CvImagePtr cv_depth_image(new cv_bridge::CvImage);
+      cv::Mat rescaled_depth, dilated_rescaled_depth, bw_image, mask, depth_map,
+          normal_map, edge_map;
+
+
+#ifdef SKYWALKER_PRINT_ON
+      //static const std::string kWindowName = "RawcolorImage";
+      //cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
+      //cv::imshow(kWindowName, cv_rgb_image->image);
+      //cv::waitKey(1);
+
+      cv::imwrite("/home/zhiliu/Documents/catkin_ws_VoSM/outputs/" + cv_rgb_image->header.frame_id + "_" + std::to_string(cv_rgb_image->header.stamp.toSec()) + "_image.jpg", cv_rgb_image->image);
+#endif
+
+      preprocess(depth_msg, rgb_msg, &rescaled_depth, &dilated_rescaled_depth,
+                 cv_rgb_image, cv_depth_image, &bw_image, &mask);
+      if (!camera_tracker_.getRgbImage().empty() &&
+              !camera_tracker_.getDepthImage().empty() ||
+          !depth_segmentation::kUseTracker) {
+        computeEdgeMap(depth_msg, rgb_msg, dilated_rescaled_depth, cv_rgb_image,
+                       cv_depth_image, bw_image, mask, &depth_map, &normal_map,
+                       &edge_map);
+
+#ifdef SKYWALKER_PRINT_ON
+        cv::imwrite("/home/zhiliu/Documents/catkin_ws_VoSM/outputs/" + std::to_string(cv_rgb_image->header.stamp.toSec()) + "_edge_map.jpg", edge_map);
+#endif
+
+        cv::Mat label_map(edge_map.size(), CV_32FC1);
+        cv::Mat remove_no_values =
+            cv::Mat::zeros(edge_map.size(), edge_map.type());
+        edge_map.copyTo(remove_no_values,
+                        dilated_rescaled_depth == dilated_rescaled_depth);
+        edge_map = remove_no_values;
+        std::vector<depth_segmentation::Segment> segments;
+        std::vector<cv::Mat> segment_masks;
+
+        depth_segmenter_.labelMap(cv_rgb_image->image, rescaled_depth,
+                                  instance_segmentation,
+                                  stuff_segmentation,
+                                  depth_map, edge_map,
+                                  normal_map, &label_map, &segment_masks,
+                                  &segments);
+
+#ifdef SKYWALKER_PRINT_ON
+        if (segments.size() > 0u) {
+          for (size_t i = 0u; i < segments.size(); ++i) {
+            cv::imwrite("/home/zhiliu/Documents/catkin_ws_VoSM/outputs/" + std::to_string(cv_rgb_image->header.stamp.toSec()) + "_" + std::to_string(i) + "_segment_masks.jpg", segment_masks[i]);
+	  }
+	}
+#endif
+
+#ifdef SKYWALKER_PRINT_ON
+        cv::imwrite("/home/zhiliu/Documents/catkin_ws_VoSM/outputs/" + std::to_string(cv_rgb_image->header.stamp.toSec()) + "_label_map.jpg", label_map);
+        // show label map
+        //LOG(INFO)<< "cv_label_map : " << label_map << std::endl;
+#endif
+        if (segments.size() > 0u) {
+          publish_segments(segments, depth_msg->header);
+        }
+      }
+
+      // Update the member images to the new images.
+      // TODO(ff): Consider only doing this, when we are far enough away
+      // from a frame. (Which basically means we would set a keyframe.)
+      depth_camera_.setImage(rescaled_depth);
+      depth_camera_.setMask(mask);
+      rgb_camera_.setImage(bw_image);
+    }
+  }
+
+
+#else
   void imageSegmentationCallback(
       const sensor_msgs::Image::ConstPtr& depth_msg,
       const sensor_msgs::Image::ConstPtr& rgb_msg,
@@ -621,6 +876,8 @@ class DepthSegmentationNode {
     semanticInstanceSegmentationFromRosMsg(segmentation_msg,
                                            &instance_segmentation);
 
+    LOG(INFO)<< "||||||||| MODE: imageSegmentationCallback" << std::endl;    
+    
 #ifdef SKYWALKER_PRINT_ON
     LOG(INFO)<< "camera_info_ready_ flag in 1st image: " << camera_info_ready_ << std::endl;
     LOG(INFO)<< "mask_rcnn_ros::Result::ConstPtr& segmentation_msg: " << segmentation_msg->header.stamp.toSec() << std::endl;
@@ -717,7 +974,16 @@ class DepthSegmentationNode {
       rgb_camera_.setImage(bw_image);
     }
   }
+
 #endif
+  
+#endif
+
+
+
+
+
+
 
   void cameraInfoCallback(
       const sensor_msgs::CameraInfo::ConstPtr& depth_camera_info_msg,

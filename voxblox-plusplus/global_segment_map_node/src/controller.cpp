@@ -478,6 +478,53 @@ void Controller::integrateFrame(ros::Time msg_timestamp) {
   timing::Timer integrate_timer("integrate_frame_pointclouds");
   Transformation T_G_C = segments_to_integrate_.at(0)->T_G_C_;
   Pointcloud point_cloud_all_segments_t;
+  
+  
+  bool wall_color_flag = true;
+  voxblox::Colors wall_color;
+  voxblox::Label wall_geo_label;
+  voxblox::InstanceLabel wall_unified_label;
+  
+  bool floor_color_flag = true;
+  voxblox::Colors floor_color;
+  voxblox::Label floor_geo_label;
+  voxblox::InstanceLabel floor_unified_label;
+  
+  
+  for (Segment* segment : segments_to_integrate_) {
+    if(segment->semantic_label_ == (0 + 300)) {
+    // wall
+      if (wall_color_flag == true) {
+        //first time
+        wall_color = segment->colors_;
+        wall_geo_label = segment->label_;
+        wall_unified_label = segment->instance_label_;
+        wall_color_flag = false;
+      }
+      segment->colors_ = wall_color; 
+      segment->instance_label_ = wall_unified_label;
+      segment->label_ = wall_geo_label;      
+    }
+    else if(segment->semantic_label_ == (3 + 300)){
+    // floor
+      if (floor_color_flag == true) {
+        //first time
+        floor_color = segment->colors_;
+        floor_geo_label = segment->label_;
+        floor_unified_label = segment->instance_label_;
+        floor_color_flag = false;
+      }
+      segment->colors_ = floor_color; 
+      segment->instance_label_ = floor_unified_label;
+      segment->label_ = floor_geo_label; 
+    }
+    //else {
+    //  LOG(INFO)<< "Do nothing for non stuff (thing) " << std::endl;
+    //}
+
+  }
+  
+  
   for (Segment* segment : segments_to_integrate_) {
     // Concatenate point clouds. (NOTE(ff): We should probably just use
     // the original cloud here instead.)

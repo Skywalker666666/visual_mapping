@@ -52,6 +52,7 @@ from psp_semseg_ros.pspnet_tf_2 import PSPNet50
 from psp_semseg_ros.utils_2 import utils
 
 
+from psp_semseg_ros.ade20k_labels_2 import ade20k_id2label
 
 
 # Local path to trained weights file
@@ -63,24 +64,24 @@ from psp_semseg_ros.utils_2 import utils
 # COCO Class names
 # Index of the class in the list is its ID. For example, to get ID of
 # the teddy bear class, use: CLASS_NAMES.index('teddy bear')
-CLASS_NAMES = ['banner', 'blanket', 'bridge', 'cardboard', 'counter', 'curtain', 'door-stuff', 'floor-wood', 
-               'flower',
-               'fruit', 'gravel', 'house', 'light', 'mirror-stuff', 'net', 'pillow', 'platform', 'playingfield',
-               'railroad',
-               'river', 'road', 'roof', 'sand', 'sea', 'shelf', 'snow', 'stairs', 'tent', 'towel', 'wall-brick',
-               'wall-stone',
-               'wall-tile', 'wall-wood', 'water-other', 'window-blind', 'window-other', 'tree-merged', 
-               'fence-merged',
-               'ceiling-merged', 'sky-other-merged', 'cabinet-merged', 'table-merged', 'floor-other-merged',
-               'pavement-merged', 'mountain-merged', 'grass-merged', 'dirt-merged', 'paper-merged',
-               'food-other-merged',
-               'building-other-merged', 'rock-merged', 'wall-other-merged', 'rug-merged']
+#CLASS_NAMES = ['banner', 'blanket', 'bridge', 'cardboard', 'counter', 'curtain', 'door-stuff', 'floor-wood', 
+#               'flower',
+#               'fruit', 'gravel', 'house', 'light', 'mirror-stuff', 'net', 'pillow', 'platform', 'playingfield',
+#               'railroad',
+#               'river', 'road', 'roof', 'sand', 'sea', 'shelf', 'snow', 'stairs', 'tent', 'towel', 'wall-brick',
+#               'wall-stone',
+#               'wall-tile', 'wall-wood', 'water-other', 'window-blind', 'window-other', 'tree-merged', 
+#               'fence-merged',
+#               'ceiling-merged', 'sky-other-merged', 'cabinet-merged', 'table-merged', 'floor-other-merged',
+#               'pavement-merged', 'mountain-merged', 'grass-merged', 'dirt-merged', 'paper-merged',
+#               'food-other-merged',
+#               'building-other-merged', 'rock-merged', 'wall-other-merged', 'rug-merged']
 
 # ID for stuff background
-CLASSES = [92, 93, 95, 100, 107, 109, 112, 118, 119, 122, 125, 128, 130, 133, 138, 141, 144, 145, 147, 148,
-           149, 151, 154, 155, 156, 159, 161, 166, 168, 171, 175, 176, 177, 178, 180, 181, 184, 185, 186,
-           187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200]
-
+#CLASSES = [92, 93, 95, 100, 107, 109, 112, 118, 119, 122, 125, 128, 130, 133, 138, 141, 144, 145, 147, 148,
+#           149, 151, 154, 155, 156, 159, 161, 166, 168, 171, 175, 176, 177, 178, 180, 181, 184, 185, 186,
+#           187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200]
+#
 
 ##class InferenceConfig():
 ##    # Set batch size to 1 since we'll be running inference on
@@ -97,9 +98,9 @@ class PSPSemSegNode(object):
         #config.display()
  
         # GPU id 0: how many GPU we have for different machine:
-        os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+        #os.environ["CUDA_VISIBLE_DEVICES"] = "0"
         # CPU only:
-        #os.environ["CUDA_VISIBLE_DEVICES"] = ""
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
         self._visualization = rospy.get_param('~visualization', True)
 
@@ -124,7 +125,7 @@ class PSPSemSegNode(object):
         
 
     def run(self):
-        #self._result_pub = rospy.Publisher('~psp_result', Result, queue_size=1)
+        self._result_pub = rospy.Publisher('~psp_result', Result, queue_size=1)
         #vis_pub = rospy.Publisher('~visualization', Image, queue_size=1)
         rospy.Subscriber('~input', Image,
                          self._image_callback, queue_size=1)
@@ -154,19 +155,19 @@ class PSPSemSegNode(object):
                 with self._sess.as_default():
                     probs = self._model.predict_multi_scale(img=np_image, flip_evaluation=False, sliding_evaluation=False, scales=EVALUATION_SCALES)
                     rospy.loginfo("-------------------------------Detection performed")
-                    
+                    # class map 
                     cm = np.argmax(probs, axis=2)
+                    # convert class map to color map for visulizatoin
                     colored_class_image = utils.color_class_image(cm, 'pspnet50_ade20k')
-
-
-                    filename = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/VanillaPanopticSeg_PSP2/data/predictions/test_result_for_vox_ros/pspnet_semseg_result_" + str(msg.header.stamp.to_sec()) + ".png"
-                    misc.imsave(filename, colored_class_image)
+                    # save color map
+                    #filename = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/VanillaPanopticSeg_PSP2/data/predictions/test_result_for_vox_ros/pspnet_semseg_result_" + str(msg.header.stamp.to_sec()) + ".png"
+                    #misc.imsave(filename, colored_class_image)
  
 
-                #rospy.loginfo(str(result.shape))
+                #rospy.loginfo(str(cm.shape))
 
-                #result_msg = self._build_result_msg(msg, result)
-                #self._result_pub.publish(result_msg)
+                result_msg = self._build_result_msg(msg, cm)
+                self._result_pub.publish(result_msg)
 
 
 
@@ -181,34 +182,42 @@ class PSPSemSegNode(object):
 
             rate.sleep()
 
-#    def _build_result_msg(self, msg, result):
-#        result_msg = Result()
-#        result_msg.header = msg.header
-#        predicted_categories = list(np.unique(result))
-#
-#        for i, category in enumerate(predicted_categories):
-#            print('Category: ')
-#            print(category)
-#            print("category_id: self.classes[int(category)]")
-#            print(self._classes[int(category)])
-#            print(self._classes_names[int(category)])
-#            # TODO: The category 0 is not 'banner' as expected... Need to look at the training.
-#            if category == 0.0: continue
-#
-#            result_msg.class_ids.append(self._classes[int(category)])
-#            result_msg.class_names.append(self._classes_names[int(category)])
-#
-#            mask = Image()
-#            mask.header = msg.header
-#            mask.height = result.shape[0]
-#            mask.width = result.shape[1]
-#            mask.encoding = "mono8"
-#            mask.is_bigendian = False
-#            mask.step = mask.width
-#            binary_mask = (np.isin(result, category) * 1)
-#            mask.data = (binary_mask * 255).tobytes()
-#            result_msg.masks.append(mask)
-#        return result_msg
+    def _build_result_msg(self, msg, result):
+        result_msg = Result()
+        result_msg.header = msg.header
+        predicted_categories = list(np.unique(result))
+
+        for i, category in enumerate(predicted_categories):
+            #print('Category: ')
+            #print(category)
+            #print("category_id: int(category) + 300 ")
+            #print(str(category + 300))
+            #print(ade20k_id2label[int(category)].name)
+            if ade20k_id2label[int(category)].name == 'wall' or ade20k_id2label[int(category)].name == 'floor':
+                print("category_id: int(category) + 300 ")
+                print(str(category + 300))
+
+                print(ade20k_id2label[int(category)].name)
+                # offset to avoid the conflict of two dataset, coco and ade20k
+                result_msg.class_ids.append(int(category) + 300)
+                result_msg.class_names.append(ade20k_id2label[int(category)].name)
+                mask = Image()
+                mask.header = msg.header
+                mask.height = result.shape[0]
+                #print("height: " + str(mask.height))
+                mask.width  = result.shape[1]
+                #print("width: " + str(mask.width))
+                mask.encoding = "mono8"
+                mask.is_bigendian = False
+                mask.step = mask.width
+                binary_mask = (np.isin(result, category) * 1)
+                uint8_binary_mask = binary_mask.astype(np.uint8)
+                mask.data = (uint8_binary_mask * 255).tobytes()
+                result_msg.masks.append(mask)
+
+                #filename2 = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/VanillaPanopticSeg_PSP2/data/predictions/test_result_for_vox_ros/pspnet_semseg_result_seperate_mask_" + str(i) + "_"  + str(msg.header.stamp.to_sec()) + ".png"
+                #misc.imsave(filename2, binary_mask * 255)
+        return result_msg
 
 
 #    def _visualize(self, result, image, msg_header):

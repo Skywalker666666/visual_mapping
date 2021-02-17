@@ -134,6 +134,14 @@ struct SemanticInstanceSegmentation {
   std::vector<int> labels;
 };
 
+
+struct SemanticStuffSegmentation {
+  std::vector<cv::Mat> masks;
+  std::vector<int> labels;
+};
+
+
+
 class DepthSegmenter {
  public:
   DepthSegmenter(const DepthCamera& depth_camera, Params& params)
@@ -167,6 +175,16 @@ class DepthSegmenter {
       const cv::Mat& depth_map, const cv::Mat& edge_map,
       const cv::Mat& normal_map, cv::Mat* labeled_map,
       std::vector<cv::Mat>* segment_masks, std::vector<Segment>* segments);
+  
+  void labelMap(
+      const cv::Mat& rgb_image, const cv::Mat& depth_image,
+      const SemanticInstanceSegmentation& semantic_instance_segmentation,
+      const SemanticStuffSegmentation& semantic_stuff_segmentation,        
+      const cv::Mat& depth_map, const cv::Mat& edge_map,
+      const cv::Mat& normal_map, cv::Mat* labeled_map,
+      std::vector<cv::Mat>* segment_masks, std::vector<Segment>* segments);
+    
+  
   void inpaintImage(const cv::Mat& depth_image, const cv::Mat& edge_map,
                     const cv::Mat& label_map, cv::Mat* inpainted);
   void findBlobs(const cv::Mat& binary,

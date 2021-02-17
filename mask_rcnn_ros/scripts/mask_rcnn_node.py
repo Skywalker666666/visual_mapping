@@ -94,6 +94,7 @@ class MaskRCNNNode(object):
             if msg is not None:
                 np_image = self._cv_bridge.imgmsg_to_cv2(msg, 'bgr8')
 
+
                 # Run detection
                 print("Run detection")
                 results = self._model.detect([np_image], verbose=0)
@@ -140,6 +141,10 @@ class MaskRCNNNode(object):
             mask.is_bigendian = False
             mask.step = mask.width
             mask.data = (result['masks'][:, :, i] * 255).tobytes()
+
+            print("shape[2]: MASK side: " + str(result['masks'].shape[2]))
+            #print("mask.data.size(): MASKRCNN side: ")
+            #print(mask.data.size())
             result_msg.masks.append(mask)
         return result_msg
 
@@ -168,7 +173,7 @@ class MaskRCNNNode(object):
         # uncomment following lines if you want to see your detection result during your running 
         #im.show()
 
-        im.save("mask_rcnn_result_" + str(msg_header.stamp.to_sec()) + ".png")
+        #im.save("mask_rcnn_result_" + str(msg_header.stamp.to_sec()) + ".png")
 
 
         return result
