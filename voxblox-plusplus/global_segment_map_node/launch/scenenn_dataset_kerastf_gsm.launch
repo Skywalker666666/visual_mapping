@@ -8,7 +8,7 @@
       <param name="~visualization" value="$(arg visualize)" />
   </node>
 
-  <node name="psp_semseg" pkg="psp_semseg_ros" type="psp_semseg_2_tf_node.py" output="screen">
+  <node name="psp_semseg" pkg="psp_semseg_ros" type="psp_semseg_2_tf_node.py" output="log">
       <remap from="~input" to="/camera/rgb/image_raw" />
       <param name="~visualization" value="$(arg visualize)" />
   </node>

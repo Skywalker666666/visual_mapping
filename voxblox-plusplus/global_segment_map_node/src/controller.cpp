@@ -431,6 +431,9 @@ void Controller::processSegment(
       pcl::fromROSMsg(*segment_point_cloud_msg, point_cloud_label);
       segment = new Segment(point_cloud_label, T_G_C);
     }
+    LOG(INFO)<< "Just received: " << segment->semantic_label_ << std::endl;
+    
+    
     CHECK_NOTNULL(segment);
     segments_to_integrate_.push_back(segment);
     ptcloud_timer.Stop();
@@ -480,43 +483,37 @@ void Controller::integrateFrame(ros::Time msg_timestamp) {
   Pointcloud point_cloud_all_segments_t;
   
   
-  bool wall_color_flag = true;
-  voxblox::Colors wall_color;
-  voxblox::Label wall_geo_label;
-  voxblox::InstanceLabel wall_unified_label;
+  //bool wall_color_flag = true;
+  //voxblox::Colors wall_color;
+  //voxblox::Label wall_geo_label;
+  //voxblox::InstanceLabel wall_unified_label;
   
-  bool floor_color_flag = true;
-  voxblox::Colors floor_color;
-  voxblox::Label floor_geo_label;
-  voxblox::InstanceLabel floor_unified_label;
+  //bool floor_color_flag = true;
+  //voxblox::Colors floor_color;
+  //voxblox::Label floor_geo_label;
+  //voxblox::InstanceLabel floor_unified_label;
   
+  LOG(INFO)<< "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDbug" << std::endl;
   
   for (Segment* segment : segments_to_integrate_) {
-    if(segment->semantic_label_ == (0 + 300)) {
+    LOG(INFO)<< "original  insance label: "  << unsigned(segment->instance_label_) << std::endl;
+    LOG(INFO)<< "original  geo label: "      << segment->label_ << std::endl;
+    LOG(INFO)<< "original  semantic label: " << unsigned(segment->semantic_label_) << std::endl;
+      
+    if(segment->semantic_label_ == 82u) {
     // wall
-      if (wall_color_flag == true) {
-        //first time
-        wall_color = segment->colors_;
-        wall_geo_label = segment->label_;
-        wall_unified_label = segment->instance_label_;
-        wall_color_flag = false;
-      }
-      segment->colors_ = wall_color; 
-      segment->instance_label_ = wall_unified_label;
-      segment->label_ = wall_geo_label;      
+      LOG(INFO)<< "original wall insance label: " << unsigned(segment->instance_label_) << std::endl;
+      LOG(INFO)<< "original wall geo label: " << segment->label_ << std::endl;
+
+      segment->instance_label_ = 100u;
+      segment->label_ = 2000;      
     }
-    else if(segment->semantic_label_ == (3 + 300)){
+    else if(segment->semantic_label_ == 85u){
     // floor
-      if (floor_color_flag == true) {
-        //first time
-        floor_color = segment->colors_;
-        floor_geo_label = segment->label_;
-        floor_unified_label = segment->instance_label_;
-        floor_color_flag = false;
-      }
-      segment->colors_ = floor_color; 
-      segment->instance_label_ = floor_unified_label;
-      segment->label_ = floor_geo_label; 
+      LOG(INFO)<< "original floor insance label: " << unsigned(segment->instance_label_) << std::endl;
+      LOG(INFO)<< "original floor geo label: " << segment->label_ << std::endl;  
+      segment->instance_label_ = 100u;
+      segment->label_ = 2000; 
     }
     //else {
     //  LOG(INFO)<< "Do nothing for non stuff (thing) " << std::endl;

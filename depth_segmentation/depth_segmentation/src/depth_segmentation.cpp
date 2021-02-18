@@ -1144,10 +1144,15 @@ void DepthSegmenter::labelMap(
       // mask, thus the assigned index is incremented by 1u.
       (*segments)[i].instance_label.insert(maximally_overlapping_mask_index +
                                            1u);
+      LOG(INFO)<< "semantic label of THING segment: "  << instance_segmentation.labels[maximally_overlapping_mask_index] << std::endl;        
+      LOG(INFO)<< "instance label of THING segment: "  << maximally_overlapping_mask_index +
+                                           1u << std::endl;       
+      
+      
     }
   }
   
-  
+
   //Panoptic Combination Fusion:
   //for stuff segments
   int stuff_area_limit = 64 * 64;
@@ -1159,10 +1164,14 @@ void DepthSegmenter::labelMap(
     int max_overlap_size = 0;
     int segment_size = cv::countNonZero((*segment_masks)[i]);
     
-    LOG(INFO)<< "size of semantic_label: "  << (*segments)[i].semantic_label.size() << std::endl;
+    //LOG(INFO)<< "size of semantic_label: "  << (*segments)[i].semantic_label.size() << std::endl;
   
     // only calculate those segments whose semantic information is still missing.
-    if ((!(*segments)[i].semantic_label.size() > 0) && segment_size > stuff_area_limit) {  
+    //LOG(INFO)<< "bool value 1: "  << (!(*segments)[i].semantic_label.size() > 0) << std::endl;
+    //LOG(INFO)<< "bool value 2: "  << (segment_size > stuff_area_limit) << std::endl;
+   
+    if ((!(*segments)[i].semantic_label.size() > 0) && segment_size > stuff_area_limit) {
+      //LOG(INFO)<< "I am in: "  << std::endl;        
       for (size_t j = 0u; j < stuff_segmentation.masks.size(); ++j) { 
         cv::Mat mask_overlap;
         cv::bitwise_and((*segment_masks)[i], stuff_segmentation.masks[j],
@@ -1178,17 +1187,26 @@ void DepthSegmenter::labelMap(
         }//if      
       }//for j
       
-      if (max_overlap_size > 0) {        
+      if (max_overlap_size > 0){        
         (*segments)[i].semantic_label.insert(stuff_segmentation.labels[maximally_overlapping_mask_index]);
         // instance label can't repeat, althogh it is useless for stuff
         // strategy 1:
         //(*segments)[i].instance_label.insert(maximally_overlapping_mask_index + segments->size() + 1u);      
         // strategy 2:
-        (*segments)[i].instance_label.insert(stuff_segmentation.labels[maximally_overlapping_mask_index] + 700);         
+        //(*segments)[i].instance_label.insert(stuff_segmentation.labels[maximally_overlapping_mask_index] + 10);
+        (*segments)[i].instance_label.insert(0u);
+        
+        LOG(INFO)<< "semantic label of stuff segment: "  << stuff_segmentation.labels[maximally_overlapping_mask_index] << std::endl;        
+        //LOG(INFO)<< "instance label of stuff segment: "  << stuff_segmentation.labels[maximally_overlapping_mask_index] << std::endl;
+        LOG(INFO)<< "instance label of stuff segment: "  << 0u << std::endl;        
       }//if (max_overlap_size > 0)  
     }//if  stuff_area_limit
+    else {
+      //LOG(INFO)<< "I am out, already assigned or too small "  << std::endl;
+    }
   }//for i
 
+  
 }//void labelMap
 
 

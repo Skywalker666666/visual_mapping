@@ -391,7 +391,7 @@ class DepthSegmentationNode {
       for (depth_segmentation::Segment segment : segments) {
         CHECK_GT(segment.points.size(), 0u);
         pcl::PointCloud<PointSurfelLabel>::Ptr segment_pcl(
-            new pcl::PointCloud<PointSurfelLabel>);
+            new pcl::PointCloud<PointSurfelLabel>);        
         for (std::size_t i = 0u; i < segment.points.size(); ++i) {
           PointSurfelLabel point_pcl;
           uint8_t semantic_label = 0u;

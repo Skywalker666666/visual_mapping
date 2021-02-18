@@ -194,12 +194,13 @@ class PSPSemSegNode(object):
             #print(str(category + 300))
             #print(ade20k_id2label[int(category)].name)
             if ade20k_id2label[int(category)].name == 'wall' or ade20k_id2label[int(category)].name == 'floor':
-                print("category_id: int(category) + 300 ")
-                print(str(category + 300))
+                print("category_id: int(category) + 82 ")
+                print(str(category + 82))
 
                 print(ade20k_id2label[int(category)].name)
                 # offset to avoid the conflict of two dataset, coco and ade20k
-                result_msg.class_ids.append(int(category) + 300)
+                # watch out, it is uin8 for id in voxblox <255
+                result_msg.class_ids.append(np.uint8(category) + 82)
                 result_msg.class_names.append(ade20k_id2label[int(category)].name)
                 mask = Image()
                 mask.header = msg.header
