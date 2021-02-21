@@ -8,6 +8,12 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/photo/photo.hpp>
 
+#include "depth_segmentation/ros_common.h"
+#include <sensor_msgs/CameraInfo.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/image_encodings.h>
+
 namespace depth_segmentation {
 
 CameraTracker::CameraTracker(const DepthCamera& depth_camera,
@@ -458,14 +464,14 @@ void DepthSegmenter::computeNormalMap(const cv::Mat& depth_map,
   } else {
     computeOwnNormals(params_.normals, depth_map, normal_map);
   }
-  if (params_.normals.display) {
+  //if (params_.normals.display) {
     static const std::string kWindowName = "NormalMap";
     cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
     // Taking the negative values of the normal map, as all normals point in
     // negative z-direction.
     cv::imshow(kWindowName, -*normal_map);
     cv::waitKey(1);
-  }
+  //}
 }
 
 void DepthSegmenter::computeMinConvexityMap(const cv::Mat& depth_map,
@@ -728,7 +734,8 @@ void DepthSegmenter::generateRandomColorsAndLabels(
   *labels = labels_;
 }
 
-void DepthSegmenter::labelMap(const cv::Mat& rgb_image,
+void DepthSegmenter::labelMap(const sensor_msgs::Image::ConstPtr& depth_msg,
+                              const cv::Mat& rgb_image,
                               const cv::Mat& depth_image,
                               const cv::Mat& depth_map, const cv::Mat& edge_map,
                               const cv::Mat& normal_map, cv::Mat* labeled_map,
@@ -749,9 +756,16 @@ void DepthSegmenter::labelMap(const cv::Mat& rgb_image,
 
   constexpr size_t kMaskValue = 255u;
 
+  LOG(INFO)<< "Start label Map 2:************************************************************* " << std::endl;
+
   cv::Mat original_depth_map;
   cv::rgbd::depthTo3d(depth_image, depth_camera_.getCameraMatrix(),
                       original_depth_map);
+
+  cv::imwrite(
+      std::to_string(depth_msg->header.stamp.toSec()) + "_depth_image_afterK.png",
+      original_depth_map);
+
 
   cv::Mat output = cv::Mat::zeros(depth_image.size(), CV_8UC3);
   switch (params_.label.method) {
@@ -988,15 +1002,21 @@ void DepthSegmenter::labelMap(const cv::Mat& rgb_image,
 }
 
 void DepthSegmenter::labelMap(
+    const sensor_msgs::Image::ConstPtr& depth_msg,
     const cv::Mat& rgb_image, const cv::Mat& depth_image,
     const SemanticInstanceSegmentation& instance_segmentation,
     const cv::Mat& depth_map, const cv::Mat& edge_map,
     const cv::Mat& normal_map, cv::Mat* labeled_map,
     std::vector<cv::Mat>* segment_masks, std::vector<Segment>* segments) {
-  labelMap(rgb_image, depth_image, depth_map, edge_map, normal_map, labeled_map,
+
+  LOG(INFO)<< "start label map level 1:************************************************************* " << std::endl;
+
+  labelMap(depth_msg, rgb_image, depth_image, depth_map, edge_map, normal_map, labeled_map,
            segment_masks, segments);
 
-  for (size_t i = 0u; i < segments->size(); ++i) {
+  LOG(INFO)<< "Finish label Map 2:************************************************************* " << std::endl;
+
+  /*for (size_t i = 0u; i < segments->size(); ++i) {
     // For each DS segment identify the corresponding
     // maximally overlapping mask, if any.
     size_t maximally_overlapping_mask_index = 0u;
@@ -1030,7 +1050,9 @@ void DepthSegmenter::labelMap(
       (*segments)[i].instance_label.insert(maximally_overlapping_mask_index +
                                            1u);
     }
-  }
+  }*/
+  LOG(INFO)<< "Finish label Map 1:************************************************************* " << std::endl;
+
 }
 
 void segmentSingleFrame(const cv::Mat& rgb_image, const cv::Mat& depth_image,
@@ -1110,8 +1132,9 @@ void segmentSingleFrame(const cv::Mat& rgb_image, const cv::Mat& depth_image,
   cv::Mat remove_no_values = cv::Mat::zeros(edge_map.size(), edge_map.type());
   edge_map.copyTo(remove_no_values, rescaled_depth == rescaled_depth);
   edge_map = remove_no_values;
-  depth_segmenter.labelMap(rgb_image, rescaled_depth, depth_map, edge_map,
-                           *normal_map, label_map, segment_masks, segments);
+  //sensor_msgs::Image::ConstPtr& depth_msg;
+  //depth_segmenter.labelMap(depth_msg, rgb_image, rescaled_depth, depth_map, edge_map,
+  //                         *normal_map, label_map, segment_masks, segments);
 }
 
 }  // namespace depth_segmentation

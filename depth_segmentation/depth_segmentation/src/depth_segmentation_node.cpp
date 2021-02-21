@@ -27,6 +27,8 @@
 #include "depth_segmentation/depth_segmentation.h"
 #include "depth_segmentation/ros_common.h"
 
+#include <opencv2/imgcodecs.hpp>
+
 struct PointSurfelLabel {
   PCL_ADD_POINT4D;
   PCL_ADD_NORMAL4D;
@@ -200,6 +202,13 @@ class DepthSegmentationNode {
       image_segmentation_sync_policy_;
 #endif
 
+
+
+  void readImageFromLocal1(cv_bridge::CvImagePtr cv_depth_image_pt){
+      cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000004_depth.png", cv::IMREAD_ANYDEPTH);
+  }
+
+
   void publish_tf(const cv::Mat cv_transform, const ros::Time& timestamp) {
     // Rotate such that the world frame initially aligns with the camera_link
     // frame.
@@ -364,11 +373,32 @@ class DepthSegmentationNode {
     CHECK_NOTNULL(bw_image);
     CHECK_NOTNULL(mask);
 
+    LOG(INFO)<< "depth_msg->encoding :************************************************************* " << depth_msg->encoding << std::endl;
+
+
     if (depth_msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1) {
-      cv_depth_image = cv_bridge::toCvCopy(
-          depth_msg, sensor_msgs::image_encodings::TYPE_16UC1);
+      //cv_depth_image = cv_bridge::toCvCopy(
+      //    depth_msg, sensor_msgs::image_encodings::TYPE_16UC1);
+      
+      cv_bridge::CvImagePtr cv_depth_image_pt(new cv_bridge::CvImage);
+      readImageFromLocal1(cv_depth_image_pt);
+      cv_depth_image->image = cv_depth_image_pt->image;
+      LOG(INFO)<< "read depth image size:************************************************************* "<< cv_depth_image->image.size() << std::endl;
+
+      //  return 16-bit/32-bit image when the input has the corresponding depth, otherwise convert it to 8-bit. 
       *rescaled_depth = cv::Mat::zeros(cv_depth_image->image.size(), CV_32FC1);
-      cv::rgbd::rescaleDepth(cv_depth_image->image, CV_32FC1, *rescaled_depth);
+      //cv::rgbd::rescaleDepth(cv_depth_image->image, CV_32FC1, *rescaled_depth);
+
+      cv_depth_image->image.convertTo(*rescaled_depth, CV_32FC1);
+      ///////*rescaled_depth = cv_depth_image->image
+
+      //static const std::string kWindowName = "Depth Image";
+      //cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
+      //imshow(kWindowName, *rescaled_depth);
+      //cv::waitKey(1);
+
+
+
     } else if (depth_msg->encoding ==
                sensor_msgs::image_encodings::TYPE_32FC1) {
       cv_depth_image = cv_bridge::toCvCopy(
@@ -377,6 +407,15 @@ class DepthSegmentationNode {
     } else {
       LOG(FATAL) << "Unknown depth image encoding.";
     }
+
+    //cv::imwrite(
+    //    std::to_string(depth_msg->header.stamp.toSec()) + "_depth_image_res2.png",
+    //    cv_depth_image->image);
+
+    LOG(INFO)<< "3: rescaled_depth image size:************************************************************* "<< rescaled_depth->size() << std::endl;
+    cv::imwrite(
+        std::to_string(depth_msg->header.stamp.toSec()) + "_depth_image_res3.png",
+        *rescaled_depth);
 
     constexpr double kZeroValue = 0.0;
     cv::Mat nan_mask = *rescaled_depth != *rescaled_depth;
@@ -398,6 +437,11 @@ class DepthSegmentationNode {
 
     *mask = cv::Mat::zeros(bw_image->size(), CV_8UC1);
     mask->setTo(cv::Scalar(depth_segmentation::CameraTracker::kImageRange));
+
+    LOG(INFO)<< "4: cv_depth_image size:************************************************************* "<< cv_depth_image->image.size() << std::endl;
+    //cv::imwrite(
+    //    std::to_string(depth_msg->header.stamp.toSec()) + "_depth_image_res4.png",
+    //    *dilated_rescaled_depth);
   }
 
   void computeEdgeMap(const sensor_msgs::Image::ConstPtr& depth_msg,
@@ -422,6 +466,10 @@ class DepthSegmentationNode {
         mask);
 #endif  // WRITE_IMAGES
 
+    cv::imwrite(
+        std::to_string(depth_msg->header.stamp.toSec()) + "_depth_image_rescaled.png",
+        rescaled_depth);
+
 #ifdef DISPLAY_DEPTH_IMAGES
     camera_tracker_.visualize(camera_tracker_.getDepthImage(), rescaled_depth);
 #endif  // DISPLAY_DEPTH_IMAGES
@@ -440,6 +488,12 @@ class DepthSegmentationNode {
                                 depth_camera_.getHeight(), CV_32FC3);
     depth_segmenter_.computeDepthMap(rescaled_depth, depth_map);
 
+    static const std::string kWindowName0 = "depth map Image";
+    cv::namedWindow(kWindowName0, cv::WINDOW_AUTOSIZE);
+    imshow(kWindowName0, *depth_map);
+    cv::waitKey(1);
+
+
     // Compute normal map.
     *normal_map = cv::Mat::zeros(depth_map->size(), CV_32FC3);
 
@@ -456,6 +510,13 @@ class DepthSegmentationNode {
       depth_segmenter_.computeNormalMap(cv_depth_image->image, normal_map);
     }
 
+    //static const std::string kWindowName1 = "Normal Map Image";
+    //cv::namedWindow(kWindowName1, cv::WINDOW_AUTOSIZE);
+    //imshow(kWindowName1, *normal_map);
+    //cv::waitKey(1);
+
+
+
     // Compute depth discontinuity map.
     cv::Mat discontinuity_map = cv::Mat::zeros(
         depth_camera_.getWidth(), depth_camera_.getHeight(), CV_32FC1);
@@ -463,6 +524,14 @@ class DepthSegmentationNode {
       depth_segmenter_.computeDepthDiscontinuityMap(rescaled_depth,
                                                     &discontinuity_map);
     }
+
+
+    static const std::string kWindowName2 = "depth discont Image";
+    cv::namedWindow(kWindowName2, cv::WINDOW_AUTOSIZE);
+    imshow(kWindowName2, discontinuity_map);
+    cv::waitKey(1);
+
+
 
     // Compute maximum distance map.
     cv::Mat distance_map = cv::Mat::zeros(depth_camera_.getWidth(),
@@ -500,6 +569,8 @@ class DepthSegmentationNode {
           normal_map, edge_map;
       preprocess(depth_msg, rgb_msg, &rescaled_depth, &dilated_rescaled_depth,
                  cv_rgb_image, cv_depth_image, &bw_image, &mask);
+
+
       if (!camera_tracker_.getRgbImage().empty() &&
               !camera_tracker_.getDepthImage().empty() ||
           !depth_segmentation::kUseTracker) {
@@ -516,7 +587,7 @@ class DepthSegmentationNode {
         std::vector<depth_segmentation::Segment> segments;
         std::vector<cv::Mat> segment_masks;
 
-        depth_segmenter_.labelMap(cv_rgb_image->image, rescaled_depth,
+        depth_segmenter_.labelMap(depth_msg, cv_rgb_image->image, rescaled_depth,
                                   depth_map, edge_map, normal_map, &label_map,
                                   &segment_masks, &segments);
 
@@ -544,7 +615,16 @@ class DepthSegmentationNode {
 
     if (camera_info_ready_) {
       cv_bridge::CvImagePtr cv_rgb_image(new cv_bridge::CvImage);
-      cv_rgb_image = cv_bridge::toCvCopy(rgb_msg, rgb_msg->encoding);
+      //cv_rgb_image = cv_bridge::toCvCopy(rgb_msg, rgb_msg->encoding);
+
+      cv_rgb_image->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/data/leftImg8bit_sequence/val/munster/munster_000173_000004_leftImg8bit.png", cv::IMREAD_COLOR);
+     
+      LOG(INFO)<< "cv rgb image :************************************************************* " << cv_rgb_image->image.size() << std::endl;
+      //static const std::string kWindowName = "RGB Image";
+      //cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
+      //imshow(kWindowName, cv_rgb_image->image);
+      //cv::waitKey(1);
+
       if (rgb_msg->encoding == sensor_msgs::image_encodings::BGR8) {
         cv::cvtColor(cv_rgb_image->image, cv_rgb_image->image, CV_BGR2RGB);
       }
@@ -552,8 +632,14 @@ class DepthSegmentationNode {
       cv_bridge::CvImagePtr cv_depth_image(new cv_bridge::CvImage);
       cv::Mat rescaled_depth, dilated_rescaled_depth, bw_image, mask, depth_map,
           normal_map, edge_map;
+
+
       preprocess(depth_msg, rgb_msg, &rescaled_depth, &dilated_rescaled_depth,
                  cv_rgb_image, cv_depth_image, &bw_image, &mask);
+
+
+      LOG(INFO)<< "Preprocess is done :************************************************************* " << cv_depth_image->image.size() << std::endl;
+
       if (!camera_tracker_.getRgbImage().empty() &&
               !camera_tracker_.getDepthImage().empty() ||
           !depth_segmentation::kUseTracker) {
@@ -561,6 +647,15 @@ class DepthSegmentationNode {
                        cv_depth_image, bw_image, mask, &depth_map, &normal_map,
                        &edge_map);
 
+        static const std::string kWindowName = "edge map Image";
+        cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
+        imshow(kWindowName, edge_map);
+        cv::waitKey(1);
+
+       
+        LOG(INFO)<< "computeEdgeMap is done :************************************************************* " << depth_map.size() << std::endl;
+
+        LOG(INFO)<< "edge_map size :************************************************************* " << edge_map.size() << std::endl;
         cv::Mat label_map(edge_map.size(), CV_32FC1);
         cv::Mat remove_no_values =
             cv::Mat::zeros(edge_map.size(), edge_map.type());
@@ -570,10 +665,13 @@ class DepthSegmentationNode {
         std::vector<depth_segmentation::Segment> segments;
         std::vector<cv::Mat> segment_masks;
 
-        depth_segmenter_.labelMap(cv_rgb_image->image, rescaled_depth,
+        depth_segmenter_.labelMap(depth_msg, cv_rgb_image->image, rescaled_depth,
                                   instance_segmentation, depth_map, edge_map,
                                   normal_map, &label_map, &segment_masks,
                                   &segments);
+
+        LOG(INFO)<< "labelMap is done :************************************************************* "  << std::endl;
+
 
         if (segments.size() > 0u) {
           publish_segments(segments, depth_msg->header);
@@ -599,28 +697,47 @@ class DepthSegmentationNode {
 
     sensor_msgs::CameraInfo depth_info;
     depth_info = *depth_camera_info_msg;
-    Eigen::Vector2d depth_image_size(depth_info.width, depth_info.height);
+    //Eigen::Vector2d depth_image_size(depth_info.width, depth_info.height);
+    Eigen::Vector2d depth_image_size(2048, 1024);
 
     cv::Mat K_depth = cv::Mat::eye(3, 3, CV_32FC1);
-    K_depth.at<float>(0, 0) = depth_info.K[0];
-    K_depth.at<float>(0, 2) = depth_info.K[2];
-    K_depth.at<float>(1, 1) = depth_info.K[4];
-    K_depth.at<float>(1, 2) = depth_info.K[5];
-    K_depth.at<float>(2, 2) = depth_info.K[8];
+    //K_depth.at<float>(0, 0) = depth_info.K[0];
+    //K_depth.at<float>(0, 2) = depth_info.K[2];
+    //K_depth.at<float>(1, 1) = depth_info.K[4];
+    //K_depth.at<float>(1, 2) = depth_info.K[5];
+    //K_depth.at<float>(2, 2) = depth_info.K[8];
+    for(int bbb = 0; bbb < 9; ++bbb){
+        LOG(INFO)<< "depth info K: ************************************************************* "<< bbb << ": "  << depth_info.K[bbb] << std::endl;
+    }
+
+    K_depth.at<float>(0, 0) = 2262.52;
+    K_depth.at<float>(0, 2) = 1096.98;
+    K_depth.at<float>(1, 1) = 2265.3017905988554;
+    K_depth.at<float>(1, 2) = 513.137;
+    K_depth.at<float>(2, 2) = 1.0;
+
 
     depth_camera_.initialize(depth_image_size.x(), depth_image_size.y(),
                              CV_32FC1, K_depth);
 
     sensor_msgs::CameraInfo rgb_info;
     rgb_info = *rgb_camera_info_msg;
-    Eigen::Vector2d rgb_image_size(rgb_info.width, rgb_info.height);
+    //Eigen::Vector2d rgb_image_size(rgb_info.width, rgb_info.height);
+    Eigen::Vector2d rgb_image_size(2048, 1024);
 
     cv::Mat K_rgb = cv::Mat::eye(3, 3, CV_32FC1);
-    K_rgb.at<float>(0, 0) = rgb_info.K[0];
-    K_rgb.at<float>(0, 2) = rgb_info.K[2];
-    K_rgb.at<float>(1, 1) = rgb_info.K[4];
-    K_rgb.at<float>(1, 2) = rgb_info.K[5];
-    K_rgb.at<float>(2, 2) = rgb_info.K[8];
+    //K_rgb.at<float>(0, 0) = rgb_info.K[0];
+    //K_rgb.at<float>(0, 2) = rgb_info.K[2];
+    //K_rgb.at<float>(1, 1) = rgb_info.K[4];
+    //K_rgb.at<float>(1, 2) = rgb_info.K[5];
+    //K_rgb.at<float>(2, 2) = rgb_info.K[8];
+
+
+    K_rgb.at<float>(0, 0) = 2262.52;
+    K_rgb.at<float>(0, 2) = 1096.98;
+    K_rgb.at<float>(1, 1) = 2265.3017905988554;
+    K_rgb.at<float>(1, 2) = 513.137;
+    K_rgb.at<float>(2, 2) = 1.0;
 
     rgb_camera_.initialize(rgb_image_size.x(), rgb_image_size.y(), CV_8UC1,
                            K_rgb);
@@ -632,11 +749,23 @@ class DepthSegmentationNode {
 
     camera_info_ready_ = true;
   }
+
+
+
+
+
+
 };
 
 int main(int argc, char** argv) {
+
+  FLAGS_log_dir = "/home/zhiliu/Documents/catkin_ws_VoSM_VPanoSeg/outputs/logs/";
+
   google::InitGoogleLogging(argv[0]);
   FLAGS_stderrthreshold = 0;
+
+  FLAGS_alsologtostderr = true;
+
 
   LOG(INFO) << "Starting depth segmentation ... ";
   ros::init(argc, argv, "depth_segmentation_node");

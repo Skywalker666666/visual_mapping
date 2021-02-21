@@ -8,6 +8,15 @@
 #include "depth_segmentation/DepthSegmenterConfig.h"
 #include "depth_segmentation/common.h"
 
+
+
+#include "depth_segmentation/ros_common.h"
+#include <sensor_msgs/CameraInfo.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/image_encodings.h>
+
+
 namespace depth_segmentation {
 
 class Camera {
@@ -155,12 +164,12 @@ class DepthSegmenter {
                            const cv::Mat& distance_map,
                            const cv::Mat& discontinuity_map, cv::Mat* edge_map);
   void edgeMap(const cv::Mat& image, cv::Mat* edge_map);
-  void labelMap(const cv::Mat& rgb_image, const cv::Mat& depth_image,
+  void labelMap(const sensor_msgs::Image::ConstPtr& depth_msg, const cv::Mat& rgb_image, const cv::Mat& depth_image,
                 const cv::Mat& depth_map, const cv::Mat& edge_map,
                 const cv::Mat& normal_map, cv::Mat* labeled_map,
                 std::vector<cv::Mat>* segment_masks,
                 std::vector<Segment>* segments);
-  void labelMap(
+  void labelMap(const sensor_msgs::Image::ConstPtr& depth_msg,
       const cv::Mat& rgb_image, const cv::Mat& depth_image,
       const SemanticInstanceSegmentation& semantic_instance_segmentation,
       const cv::Mat& depth_map, const cv::Mat& edge_map,

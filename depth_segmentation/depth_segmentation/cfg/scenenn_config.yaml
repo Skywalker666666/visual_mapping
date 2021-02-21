@@ -5,7 +5,7 @@ rgb_camera_info_sub_topic: /camera/rgb/camera_info
 
 depth_discontinuity_display: false
 depth_discontinuity_kernel_size: 3
-depth_discontinuity_ratio: 0.01
+depth_discontinuity_ratio: 0.18
 depth_discontinuity_use_depth_discontinuity: true
 dilate_depth_image: false
 dilation_size: 1
