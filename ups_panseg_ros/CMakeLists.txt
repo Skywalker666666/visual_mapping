@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(ups_semseg_ros)
+project(ups_panseg_ros)
 
 find_package(catkin REQUIRED COMPONENTS std_msgs sensor_msgs message_generation)
 
@@ -24,7 +24,7 @@ catkin_package(CATKIN_DEPENDS message_runtime)
 #############
 
 install(PROGRAMS
-  scripts/ups_semseg_node.py
+  scripts/ups_panseg_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

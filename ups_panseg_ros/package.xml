@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>ups_semseg_ros</name>
+  <name>ups_panseg_ros</name>
   <version>0.1.0</version>
   <description>The UPSNet Semantic Seg for ROS</description>
 
