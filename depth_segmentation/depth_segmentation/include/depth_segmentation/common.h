@@ -33,6 +33,7 @@ enum class SurfaceNormalEstimationMethod {
   kDepthWindowFilter = 3,
 };
 
+
 struct SurfaceNormalParams {
   SurfaceNormalParams() {
     CHECK_EQ(window_size % 2u, 1u);

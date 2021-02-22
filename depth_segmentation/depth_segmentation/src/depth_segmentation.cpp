@@ -206,6 +206,8 @@ void DepthSegmenter::dynamicReconfigureCallback(
   }
   params_.normals.method =
       static_cast<SurfaceNormalEstimationMethod>(config.normals_method);
+      
+  LOG(INFO) << "6: SurfaceNormalEstimationMethod:$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ "<<  config.normals_method << std::endl;      
   params_.normals.distance_factor_threshold =
       config.normals_distance_factor_threshold;
   params_.normals.window_size = config.normals_window_size;
@@ -449,7 +451,16 @@ void DepthSegmenter::computeMaxDistanceMap(const cv::Mat& depth_map,
 void DepthSegmenter::computeNormalMap(const cv::Mat& depth_map,
                                       cv::Mat* normal_map) {
   CHECK(!depth_map.empty());
-  CHECK(depth_map.type() == CV_32FC3 &&
+//   CHECK(depth_map.type() == CV_32FC3 &&
+//             (params_.normals.method == SurfaceNormalEstimationMethod::kFals ||
+//              params_.normals.method == SurfaceNormalEstimationMethod::kSri ||
+//              params_.normals.method ==
+//                  SurfaceNormalEstimationMethod::kDepthWindowFilter) ||
+//         (depth_map.type() == CV_32FC1 || depth_map.type() == CV_16UC1 ||
+//          depth_map.type() == CV_32FC3) &&
+//             params_.normals.method == SurfaceNormalEstimationMethod::kLinemod);
+//  
+ CHECK(depth_map.type() == CV_32FC3 &&
             (params_.normals.method == SurfaceNormalEstimationMethod::kFals ||
              params_.normals.method == SurfaceNormalEstimationMethod::kSri ||
              params_.normals.method ==
@@ -457,6 +468,8 @@ void DepthSegmenter::computeNormalMap(const cv::Mat& depth_map,
         (depth_map.type() == CV_32FC1 || depth_map.type() == CV_16UC1 ||
          depth_map.type() == CV_32FC3) &&
             params_.normals.method == SurfaceNormalEstimationMethod::kLinemod);
+  
+  
   CHECK_NOTNULL(normal_map);
   if (params_.normals.method !=
       SurfaceNormalEstimationMethod::kDepthWindowFilter) {
@@ -1052,8 +1065,98 @@ void DepthSegmenter::labelMap(
     }
   }*/
   LOG(INFO)<< "Finish label Map 1:************************************************************* " << std::endl;
+}  
+  
+  
+  
+  
+  
+// new label map:
+void DepthSegmenter::labelMap(const sensor_msgs::Image::ConstPtr& depth_msg,
+                              const cv::Mat& rgb_image,
+                              const cv::Mat& depth_image,
+                              const SemanticInstanceSegmentation& instance_segmentation,
+                              const cv::Mat& depth_map,
+                              const cv::Mat& normal_map, cv::Mat* labeled_map,
+                              std::vector<cv::Mat>* segment_masks,
+                              std::vector<Segment>* segments) {
+  CHECK(!rgb_image.empty());
+  CHECK(!depth_image.empty());
+  CHECK_EQ(depth_image.type(), CV_32FC1);
+  CHECK_EQ(depth_map.type(), CV_32FC3);
+  CHECK_EQ(normal_map.type(), CV_32FC3);
+  CHECK_EQ(depth_image.size(), depth_map.size());
+  CHECK_NOTNULL(labeled_map);
+  CHECK_NOTNULL(segment_masks);
+  CHECK_NOTNULL(segments)->clear();
+
+  constexpr size_t kMaskValue = 255u;
+
+  LOG(INFO)<< "Start label Map 2:************************************************************* " << std::endl;
+
+  cv::Mat original_depth_map;
+  cv::rgbd::depthTo3d(depth_image, depth_camera_.getCameraMatrix(),
+                      original_depth_map);
+
+  segments->resize(instance_segmentation.masks.size());  
+  segment_masks->resize(instance_segmentation.masks.size());
+  for (cv::Mat& segment_mask : *segment_masks) {
+    segment_mask = cv::Mat(depth_image.size(), CV_8UC1, cv::Scalar(0));
+  }
+
+
+  for (size_t j = 0u; j < instance_segmentation.masks.size(); ++j) {
+    for (size_t x = 0u; x < instance_segmentation.masks[j].cols; ++x) {
+      for (size_t y = 0u; y < instance_segmentation.masks[j].rows; ++y) {
+        // Append vectors from VPS network and normals from normal_map to
+        // vectors of segments.
+        if(instance_segmentation.masks[j].at<uint8_t>(y,x) == 255){
+          cv::Vec3f point = original_depth_map.at<cv::Vec3f>(y, x);
+          //we need to flip both y and z
+          //point[0] = -point[0];
+          point[1] = -point[1];
+          point[2] = -point[2];
+          cv::Vec3f normal = normal_map.at<cv::Vec3f>(y, x);
+          //normal[0] = -normal[0];
+          normal[1] = -normal[1];          
+          normal[2] = -normal[2];
+          cv::Vec3b original_color = rgb_image.at<cv::Vec3b>(y, x);
+          cv::Vec3f color_f;
+          constexpr bool kUseOriginalColors = true;
+          if (kUseOriginalColors) {
+            color_f = cv::Vec3f(static_cast<float>(original_color[0]),
+                                static_cast<float>(original_color[1]),
+                                static_cast<float>(original_color[2]));
+          } else {
+            //color_f = cv::Vec3f(static_cast<float>(colors[label][0]),
+            //                    static_cast<float>(colors[label][1]),
+            //                    static_cast<float>(colors[label][2]));
+          }
+          //std::vector<cv::Vec3f> rgb_point_with_normals{point, normal,
+          //                                              color_f};
+          Segment& segment = (*segments)[j];
+          segment.points.push_back(point);
+          segment.normals.push_back(normal);
+          segment.original_colors.push_back(color_f);
+          segment.label.insert(instance_segmentation.labels[j]);
+          cv::Mat& segment_mask = (*segment_masks)[j];
+          segment_mask.at<uint8_t>(y, x) = kMaskValue;
+        } 
+      }
+    }
+  LOG(INFO)<< "Built one segments:************************************************************* " << j << "/" << instance_segmentation.masks.size() << std::endl;
+  }//j < instance_segmentation.masks.size()
 
 }
+  
+  
+  
+  
+  
+  
+  
+  
+
 
 void segmentSingleFrame(const cv::Mat& rgb_image, const cv::Mat& depth_image,
                         const cv::Mat& depth_intrinsics,

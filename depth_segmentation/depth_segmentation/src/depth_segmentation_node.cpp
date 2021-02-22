@@ -28,6 +28,9 @@
 #include "depth_segmentation/ros_common.h"
 
 #include <opencv2/imgcodecs.hpp>
+#include <pcl/visualization/cloud_viewer.h>
+#include <pcl/io/pcd_io.h>
+
 
 struct PointSurfelLabel {
   PCL_ADD_POINT4D;
@@ -205,7 +208,8 @@ class DepthSegmentationNode {
 
 
   void readImageFromLocal1(cv_bridge::CvImagePtr cv_depth_image_pt){
-      cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000004_depth.png", cv::IMREAD_ANYDEPTH);
+      //cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000004_depth.tif", cv::IMREAD_ANYDEPTH);  //16bit
+      cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000004_depth.png", cv::IMREAD_ANYDEPTH); //8bit     
   }
 
 
@@ -265,6 +269,24 @@ class DepthSegmentationNode {
     point_pcl->instance_label = instance_label;
   }
 
+  // Add for convert point cloud format for visualization and saving  
+  void ConvertPointSurfelLabeltoPointXYZRGB(
+      const pcl::PointCloud<PointSurfelLabel>::Ptr segment_pcl,
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud) {
+          for (int pIndex = 0; pIndex < segment_pcl->points.size(); pIndex++) {
+                //LOG(INFO)<< "What is going on for segment: "<< segment_pcl->points[pIndex].x << std::endl;
+                pcl::PointXYZRGB point_xyzrgb;
+                point_xyzrgb.x = segment_pcl->points[pIndex].x;
+                point_xyzrgb.y = segment_pcl->points[pIndex].y;
+                point_xyzrgb.z = segment_pcl->points[pIndex].z;
+                point_xyzrgb.r = segment_pcl->points[pIndex].r;
+                point_xyzrgb.g = segment_pcl->points[pIndex].g;
+                point_xyzrgb.b = segment_pcl->points[pIndex].b;
+                cloud->push_back(point_xyzrgb);
+          }
+  }
+  
+  
   void publish_segments(
       const std::vector<depth_segmentation::Segment>& segments,
       const std_msgs::Header& header) {
@@ -305,6 +327,29 @@ class DepthSegmentationNode {
       if (params_.visualize_segmented_scene) {
         pcl::toROSMsg(*scene_pcl, pcl2_msg);
       }
+      
+      // uncomment following lines if want to save pcd file
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+      // following one is wrong
+      //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
+
+      ConvertPointSurfelLabeltoPointXYZRGB(scene_pcl, cloud);
+
+      // ---------------------------------------------------------------
+      // online viewer
+      // ---------------------------------------------------------------
+      //pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
+      //viewer.showCloud(cloud);
+      //viewer.runOnVisualizationThreadOnce(viewerOneOff());
+      //while(!viewer.wasStopped()){
+      //}
+
+      // ---------------------------------------------------------------
+      // save point cloud
+      // ---------------------------------------------------------------
+      pcl::io::savePCDFile("test_" + std::to_string(header.stamp.toSec()) + ".pcd", *cloud);
+      
+      
     } else {
       pcl::PointCloud<pcl::PointSurfel>::Ptr scene_pcl(
           new pcl::PointCloud<pcl::PointSurfel>);
@@ -382,7 +427,12 @@ class DepthSegmentationNode {
       
       cv_bridge::CvImagePtr cv_depth_image_pt(new cv_bridge::CvImage);
       readImageFromLocal1(cv_depth_image_pt);
-      cv_depth_image->image = cv_depth_image_pt->image;
+      
+      LOG(INFO)<< "read depth image type1:************************************************************* "<< cv_depth_image_pt->image.type() << std::endl;
+      // 0: cv_8UC1
+      // 5: cv_32FC1      
+      
+      cv_depth_image_pt->image.convertTo(cv_depth_image->image,CV_32FC1);
       LOG(INFO)<< "read depth image size:************************************************************* "<< cv_depth_image->image.size() << std::endl;
 
       //  return 16-bit/32-bit image when the input has the corresponding depth, otherwise convert it to 8-bit. 
@@ -392,6 +442,12 @@ class DepthSegmentationNode {
       cv_depth_image->image.convertTo(*rescaled_depth, CV_32FC1);
       ///////*rescaled_depth = cv_depth_image->image
 
+      LOG(INFO)<< "read depth image type2:************************************************************* "<< cv_depth_image->image.type() << std::endl;
+      // 0: cv_8UC1
+      // 5: cv_32FC1
+      
+      
+      
       //static const std::string kWindowName = "Depth Image";
       //cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
       //imshow(kWindowName, *rescaled_depth);
@@ -421,6 +477,8 @@ class DepthSegmentationNode {
     cv::Mat nan_mask = *rescaled_depth != *rescaled_depth;
     rescaled_depth->setTo(kZeroValue, nan_mask);
 
+    LOG(INFO)<< "3_1: dilate_depth_image option:************************************************************* "<< params_.dilate_depth_image << std::endl;    
+
     if (params_.dilate_depth_image) {
       cv::Mat element = cv::getStructuringElement(
           cv::MORPH_RECT, cv::Size(2u * params_.dilation_size + 1u,
@@ -438,7 +496,7 @@ class DepthSegmentationNode {
     *mask = cv::Mat::zeros(bw_image->size(), CV_8UC1);
     mask->setTo(cv::Scalar(depth_segmentation::CameraTracker::kImageRange));
 
-    LOG(INFO)<< "4: cv_depth_image size:************************************************************* "<< cv_depth_image->image.size() << std::endl;
+    LOG(INFO)<< "4: 2D cv_depth_image size:************************************************************* "<< cv_depth_image->image.size() << std::endl;
     //cv::imwrite(
     //    std::to_string(depth_msg->header.stamp.toSec()) + "_depth_image_res4.png",
     //    *dilated_rescaled_depth);
@@ -486,17 +544,24 @@ class DepthSegmentationNode {
 
     *depth_map = cv::Mat::zeros(depth_camera_.getWidth(),
                                 depth_camera_.getHeight(), CV_32FC3);
+    // from CV_32FC1 to CV_32FC3
     depth_segmenter_.computeDepthMap(rescaled_depth, depth_map);
 
     static const std::string kWindowName0 = "depth map Image";
     cv::namedWindow(kWindowName0, cv::WINDOW_AUTOSIZE);
     imshow(kWindowName0, *depth_map);
     cv::waitKey(1);
+    cv::imwrite(
+        std::to_string(depth_msg->header.stamp.toSec()) + "_depth_map_image.png",
+        *depth_map);   
+    LOG(INFO)<< "5: after depthTo3D depth_map size:$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ "<< depth_map->size() << std::endl;    
 
 
     // Compute normal map.
     *normal_map = cv::Mat::zeros(depth_map->size(), CV_32FC3);
+    //LOG(INFO)<< "6: SurfaceNormalEstimationMethod:$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ "<< params_.normals.method << std::endl;    
 
+    
     if (params_.normals.method ==
             depth_segmentation::SurfaceNormalEstimationMethod::kFals ||
         params_.normals.method ==
@@ -612,7 +677,10 @@ class DepthSegmentationNode {
     depth_segmentation::SemanticInstanceSegmentation instance_segmentation;
     semanticInstanceSegmentationFromRosMsg(segmentation_msg,
                                            &instance_segmentation);
-
+    //To Do
+    
+    
+    
     if (camera_info_ready_) {
       cv_bridge::CvImagePtr cv_rgb_image(new cv_bridge::CvImage);
       //cv_rgb_image = cv_bridge::toCvCopy(rgb_msg, rgb_msg->encoding);
@@ -646,7 +714,10 @@ class DepthSegmentationNode {
         computeEdgeMap(depth_msg, rgb_msg, dilated_rescaled_depth, cv_rgb_image,
                        cv_depth_image, bw_image, mask, &depth_map, &normal_map,
                        &edge_map);
-
+        cv::imwrite(
+        std::to_string(depth_msg->header.stamp.toSec()) + "_normal_map.png",
+        normal_map);
+    
         static const std::string kWindowName = "edge map Image";
         cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
         imshow(kWindowName, edge_map);
@@ -665,13 +736,17 @@ class DepthSegmentationNode {
         std::vector<depth_segmentation::Segment> segments;
         std::vector<cv::Mat> segment_masks;
 
-        depth_segmenter_.labelMap(depth_msg, cv_rgb_image->image, rescaled_depth,
-                                  instance_segmentation, depth_map, edge_map,
-                                  normal_map, &label_map, &segment_masks,
-                                  &segments);
+        //depth_segmenter_.labelMap(depth_msg, cv_rgb_image->image, dilated_rescaled_depth,
+        //                          instance_segmentation, depth_map, edge_map,
+        //                          normal_map, &label_map, &segment_masks,
+        //                          &segments);
 
+        depth_segmenter_.labelMap(depth_msg, cv_rgb_image->image, dilated_rescaled_depth,
+                                   instance_segmentation, depth_map, 
+                                   normal_map, &label_map, &segment_masks,
+                                   &segments);
+        
         LOG(INFO)<< "labelMap is done :************************************************************* "  << std::endl;
-
 
         if (segments.size() > 0u) {
           publish_segments(segments, depth_msg->header);
