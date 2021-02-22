@@ -1112,35 +1112,37 @@ void DepthSegmenter::labelMap(const sensor_msgs::Image::ConstPtr& depth_msg,
         // vectors of segments.
         if(instance_segmentation.masks[j].at<uint8_t>(y,x) == 255){
           cv::Vec3f point = original_depth_map.at<cv::Vec3f>(y, x);
-          //we need to flip both y and z
-          //point[0] = -point[0];
-          point[1] = -point[1];
-          point[2] = -point[2];
-          cv::Vec3f normal = normal_map.at<cv::Vec3f>(y, x);
-          //normal[0] = -normal[0];
-          normal[1] = -normal[1];          
-          normal[2] = -normal[2];
-          cv::Vec3b original_color = rgb_image.at<cv::Vec3b>(y, x);
-          cv::Vec3f color_f;
-          constexpr bool kUseOriginalColors = true;
-          if (kUseOriginalColors) {
-            color_f = cv::Vec3f(static_cast<float>(original_color[0]),
-                                static_cast<float>(original_color[1]),
-                                static_cast<float>(original_color[2]));
-          } else {
+          if (point[2] != 0 && abs(point[2]) < 150){
+            //we need to flip both y and z
+            //point[0] = -point[0];
+            point[1] = -point[1];
+            point[2] = -point[2];
+            cv::Vec3f normal = normal_map.at<cv::Vec3f>(y, x);
+            //normal[0] = -normal[0];
+            normal[1] = -normal[1];          
+            normal[2] = -normal[2];
+            cv::Vec3b original_color = rgb_image.at<cv::Vec3b>(y, x);
+            cv::Vec3f color_f;
+            constexpr bool kUseOriginalColors = true;
+            if (kUseOriginalColors) {
+              color_f = cv::Vec3f(static_cast<float>(original_color[0]),
+                                  static_cast<float>(original_color[1]),
+                                  static_cast<float>(original_color[2]));
+            } else {
             //color_f = cv::Vec3f(static_cast<float>(colors[label][0]),
             //                    static_cast<float>(colors[label][1]),
             //                    static_cast<float>(colors[label][2]));
+            }
+            //std::vector<cv::Vec3f> rgb_point_with_normals{point, normal,
+            //                                              color_f};
+            Segment& segment = (*segments)[j];
+            segment.points.push_back(point);
+            segment.normals.push_back(normal);
+            segment.original_colors.push_back(color_f);
+            segment.label.insert(instance_segmentation.labels[j]);
+            cv::Mat& segment_mask = (*segment_masks)[j];
+            segment_mask.at<uint8_t>(y, x) = kMaskValue;
           }
-          //std::vector<cv::Vec3f> rgb_point_with_normals{point, normal,
-          //                                              color_f};
-          Segment& segment = (*segments)[j];
-          segment.points.push_back(point);
-          segment.normals.push_back(normal);
-          segment.original_colors.push_back(color_f);
-          segment.label.insert(instance_segmentation.labels[j]);
-          cv::Mat& segment_mask = (*segment_masks)[j];
-          segment_mask.at<uint8_t>(y, x) = kMaskValue;
         } 
       }
     }

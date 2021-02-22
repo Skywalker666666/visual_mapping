@@ -208,8 +208,12 @@ class DepthSegmentationNode {
 
 
   void readImageFromLocal1(cv_bridge::CvImagePtr cv_depth_image_pt){
-      //cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000004_depth.tif", cv::IMREAD_ANYDEPTH);  //16bit
-      cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000004_depth.png", cv::IMREAD_ANYDEPTH); //8bit     
+      cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000004_depth.tif", cv::IMREAD_ANYDEPTH);  //16bit
+      //cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000004_depth.png", cv::IMREAD_ANYDEPTH); 
+      //8bit or 16bit uint
+      
+      LOG(INFO)<< "depth value sampler1 :************************************************************* " << unsigned(cv_depth_image_pt->image.at<uint16_t>(950,900)) << std::endl; 
+      LOG(INFO)<< "depth value sampler2 :************************************************************* " << unsigned(cv_depth_image_pt->image.at<uint16_t>(950,909)) << std::endl;      
   }
 
 
@@ -433,6 +437,9 @@ class DepthSegmentationNode {
       // 5: cv_32FC1      
       
       cv_depth_image_pt->image.convertTo(cv_depth_image->image,CV_32FC1);
+      
+      cv_depth_image->image = cv_depth_image->image / 100;
+      
       LOG(INFO)<< "read depth image size:************************************************************* "<< cv_depth_image->image.size() << std::endl;
 
       //  return 16-bit/32-bit image when the input has the corresponding depth, otherwise convert it to 8-bit. 
