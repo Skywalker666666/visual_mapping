@@ -99,8 +99,8 @@ void CameraTracker::visualize(const cv::Mat old_depth_image,
   cv::convertScaleAbs(combined_depth, adjusted_depth,
                       static_cast<double>(kImageRange) / (max - min));
 
-  cv::imshow(kDebugWindowName, adjusted_depth);
-  cv::waitKey(1);
+  //cv::imshow(kDebugWindowName, adjusted_depth);
+  //cv::waitKey(1);
 }
 
 void CameraTracker::createMask(const cv::Mat& depth, cv::Mat* mask) {
@@ -1112,15 +1112,16 @@ void DepthSegmenter::labelMap(const sensor_msgs::Image::ConstPtr& depth_msg,
         // vectors of segments.
         if(instance_segmentation.masks[j].at<uint8_t>(y,x) == 255){
           cv::Vec3f point = original_depth_map.at<cv::Vec3f>(y, x);
-          if (point[2] != 0 && abs(point[2]) < 150){
+          // I use 150m, 100m
+          if (point[2] != 0 && abs(point[2]) < 100){
             //we need to flip both y and z
             //point[0] = -point[0];
-            point[1] = -point[1];
-            point[2] = -point[2];
+            //point[1] = -point[1];
+            //point[2] = -point[2];
             cv::Vec3f normal = normal_map.at<cv::Vec3f>(y, x);
             //normal[0] = -normal[0];
-            normal[1] = -normal[1];          
-            normal[2] = -normal[2];
+            //normal[1] = -normal[1];          
+            //normal[2] = -normal[2];
             cv::Vec3b original_color = rgb_image.at<cv::Vec3b>(y, x);
             cv::Vec3f color_f;
             constexpr bool kUseOriginalColors = true;
@@ -1139,7 +1140,7 @@ void DepthSegmenter::labelMap(const sensor_msgs::Image::ConstPtr& depth_msg,
             segment.points.push_back(point);
             segment.normals.push_back(normal);
             segment.original_colors.push_back(color_f);
-            segment.label.insert(instance_segmentation.labels[j]);
+            segment.label.insert(j);
             cv::Mat& segment_mask = (*segment_masks)[j];
             segment_mask.at<uint8_t>(y, x) = kMaskValue;
           }
@@ -1149,6 +1150,43 @@ void DepthSegmenter::labelMap(const sensor_msgs::Image::ConstPtr& depth_msg,
   LOG(INFO)<< "Built one segments:************************************************************* " << j << "/" << instance_segmentation.masks.size() << std::endl;
   }//j < instance_segmentation.masks.size()
 
+
+  for (size_t i = 0u; i < segments->size(); ++i) {
+    // For each Panoptic segment identify the corresponding
+    // maximally overlapping mask, if any.
+    size_t maximally_overlapping_mask_index = 0u;
+    int max_overlap_size = 0;
+    int segment_size = cv::countNonZero((*segment_masks)[i]);
+
+    for (size_t j = 0u; j < instance_segmentation.masks.size(); ++j) {
+      // Search through all masks to find the maximally overlapping one.
+      cv::Mat mask_overlap;
+      cv::bitwise_and((*segment_masks)[i], instance_segmentation.masks[j],
+                      mask_overlap);
+
+      int overlap_size = cv::countNonZero(mask_overlap);
+      float normalized_overlap = (float)overlap_size / (float)segment_size;
+
+      if (overlap_size > max_overlap_size &&
+          normalized_overlap >
+              params_.semantic_instance_segmentation.overlap_threshold) {
+        maximally_overlapping_mask_index = j;
+        max_overlap_size = overlap_size;
+      }
+    }
+
+    if (max_overlap_size > 0) {
+      // Found a maximally overlapping mask, assign
+      // the corresponding semantic and instance labels.
+      (*segments)[i].semantic_label.insert(
+          instance_segmentation.labels[maximally_overlapping_mask_index]);
+      // Instance label 0u corresponds to a segment with no overlapping
+      // mask, thus the assigned index is incremented by 1u.
+      (*segments)[i].instance_label.insert(maximally_overlapping_mask_index +
+                                           1u);
+    }
+  }  
+  
 }
   
   

@@ -391,9 +391,57 @@ void Controller::processSegment(
     const sensor_msgs::PointCloud2::Ptr& segment_point_cloud_msg) {
   // Look up transform from camera frame to world frame.
   Transformation T_G_C;
+  
   std::string from_frame = segment_point_cloud_msg->header.frame_id;
   if (lookupTransform(from_frame, world_frame_,
                       segment_point_cloud_msg->header.stamp, &T_G_C)) {
+      
+    LOG(INFO)<< "TGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGC" << std::endl;
+    LOG(INFO)<< "Transform Look Up: " << T_G_C << std::endl;
+  
+//  This method doesn't work  
+//     float NomoveTGC[4][4] = {
+//         1,0,0,0,
+//         0,1,0,0,
+//         0,0,1,0,
+//         0,0,0,1
+//     };
+    
+//     T_G_C = NomoveTGC;
+     
+/*    for(int ii = 0; ii<4; ii++) {
+      for(int jj = 0; jj<4; jj++) {
+        if (ii == jj){
+          T_G_C[ii][jj] = 1;
+        }
+        else{
+          T_G_C[ii][jj] = 0;            
+        }
+      }
+    } */ 
+
+    // refer to catkin_ws_VoSM_VPanoSeg/src/minkindr_ros/minkindr_conversions/include/minkindr_conversions/kindr_tf.h
+    
+    tf::Transform tf_transform_city;
+    tf::Vector3 origin;
+    origin.setX(0);
+    origin.setY(0);
+    origin.setZ(0); 
+    //setZero ()
+    tf::Quaternion rotation(0, 0, 0, 1); // x, y, z, w in orde
+    //tf::Quaternion createIdentityQuaternion()    
+    //rotation = tf::createIdentityQuaternion();
+    tf_transform_city.setOrigin(origin);
+    tf_transform_city.setRotation(rotation);
+    Transformation T_G_C_city;
+    tf::transformTFToKindr(tf_transform_city, &T_G_C_city);
+   
+  
+    LOG(INFO)<< "TGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGC" << std::endl;
+    LOG(INFO)<< "Transform Look Up: " << T_G_C_city << std::endl;
+   
+    T_G_C = T_G_C_city;
+    
     // Convert the PCL pointcloud into voxblox format.
     // Horrible hack fix to fix color parsing colors in PCL.
     for (size_t d = 0; d < segment_point_cloud_msg->fields.size(); ++d) {
@@ -492,6 +540,12 @@ void Controller::integrateFrame(ros::Time msg_timestamp) {
       CHECK_NOTNULL(segment);
       segment->T_G_C_ = T_Gicp_C;
 
+      
+      
+      LOG(INFO)<< "segment->points_C_: " << segment->points_C_.size() << std::endl;
+//       LOG(INFO)<< "segment->label_: "    << segment->label_[0]           << std::endl;
+       //LOG(INFO)<< "segment->colors_: "   << segment->colors_          << std::endl;
+            
       integrator_->integratePointCloud(segment->T_G_C_, segment->points_C_,
                                        segment->colors_, segment->label_,
                                        kIsFreespacePointcloud);
@@ -873,6 +927,14 @@ bool Controller::lookupTransform(const std::string& from_frame,
     return false;
   }
 
+  LOG(INFO)<< "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT" << std::endl;
+  LOG(INFO)<< "tf_transform timestamp: " << tf_transform.stamp_.toSec()  << std::endl;
+  LOG(INFO)<< "tf_transform frame_id: " << tf_transform.frame_id_  << std::endl;
+  LOG(INFO)<< "tf_transform child_frame_id: " << tf_transform.child_frame_id_  << std::endl;
+  LOG(INFO)<< "tf_transform matrix 3x3: " << tf_transform.getBasis().getRow(0).getX()  << std::endl;
+  //LOG(INFO)<< "tf_transform Vector3: " << tf_transform.getOrigin()  << std::endl;  
+  
+  
   tf::transformTFToKindr(tf_transform, transform);
   return true;
 }

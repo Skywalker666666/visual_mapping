@@ -598,10 +598,10 @@ class DepthSegmentationNode {
     }
 
 
-    static const std::string kWindowName2 = "depth discont Image";
-    cv::namedWindow(kWindowName2, cv::WINDOW_AUTOSIZE);
-    imshow(kWindowName2, discontinuity_map);
-    cv::waitKey(1);
+    //static const std::string kWindowName2 = "depth discont Image";
+    //cv::namedWindow(kWindowName2, cv::WINDOW_AUTOSIZE);
+    //imshow(kWindowName2, discontinuity_map);
+    //cv::waitKey(1);
 
 
 
@@ -725,10 +725,10 @@ class DepthSegmentationNode {
         std::to_string(depth_msg->header.stamp.toSec()) + "_normal_map.png",
         normal_map);
     
-        static const std::string kWindowName = "edge map Image";
-        cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
-        imshow(kWindowName, edge_map);
-        cv::waitKey(1);
+        //static const std::string kWindowName = "edge map Image";
+        //cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
+        //imshow(kWindowName, edge_map);
+        //cv::waitKey(1);
 
        
         LOG(INFO)<< "computeEdgeMap is done :************************************************************* " << depth_map.size() << std::endl;

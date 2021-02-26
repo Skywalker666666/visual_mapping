@@ -41,6 +41,6 @@ min_convexity_use_threshold: true
 min_convexity_window_size: 5
 normals_display: false
 normals_distance_factor_threshold: 0.05
-normals_method: 1
+normals_method: 3
 normals_window_size: 7
 visualize_segmented_scene: false
