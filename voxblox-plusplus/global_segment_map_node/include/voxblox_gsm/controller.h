@@ -185,6 +185,9 @@ class Controller {
   std::mutex mesh_layer_mutex_;
   bool mesh_layer_updated_;
   bool need_full_remesh_;
+  
+  // used for pick up right rotation
+  uint16_t controller_frame_cnt_;
 };
 
 }  // namespace voxblox_gsm

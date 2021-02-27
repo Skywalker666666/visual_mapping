@@ -59,7 +59,8 @@ class DepthSegmentationNode {
         rgb_camera_(),
         params_(),
         camera_tracker_(depth_camera_, rgb_camera_),
-        depth_segmenter_(depth_camera_, params_) {
+        depth_segmenter_(depth_camera_, params_),
+        frame_count_(0) {
     node_handle_.param<bool>("semantic_instance_segmentation/enable",
                              params_.semantic_instance_segmentation.enable,
                              params_.semantic_instance_segmentation.enable);
@@ -204,16 +205,53 @@ class DepthSegmentationNode {
   message_filters::Synchronizer<ImageSegmentationSyncPolicy>*
       image_segmentation_sync_policy_;
 #endif
+  
+      
+  uint16_t frame_count_;
 
 
 
-  void readImageFromLocal1(cv_bridge::CvImagePtr cv_depth_image_pt){
+  void readImageFromLocal1(cv_bridge::CvImagePtr cv_depth_image_pt, const uint16_t frame_count){
+      if(frame_count == 1){
+      LOG(INFO)<< "frame_count for depth from 0: :************************************************************* " << frame_count - 1 << std::endl; 
+      
       cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000004_depth.tif", cv::IMREAD_ANYDEPTH);  //16bit
       //cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000004_depth.png", cv::IMREAD_ANYDEPTH); 
       //8bit or 16bit uint
       
       LOG(INFO)<< "depth value sampler1 :************************************************************* " << unsigned(cv_depth_image_pt->image.at<uint16_t>(950,900)) << std::endl; 
-      LOG(INFO)<< "depth value sampler2 :************************************************************* " << unsigned(cv_depth_image_pt->image.at<uint16_t>(950,909)) << std::endl;      
+      LOG(INFO)<< "depth value sampler2 :************************************************************* " << unsigned(cv_depth_image_pt->image.at<uint16_t>(950,909)) << std::endl; 
+      }
+      else if(frame_count == 2){
+      LOG(INFO)<< "frame_count for depth from 1: :************************************************************* " << frame_count - 1 << std::endl; 
+      
+      cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000009_depth.tif", cv::IMREAD_ANYDEPTH);  //16bit
+      //cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000004_depth.png", cv::IMREAD_ANYDEPTH); 
+      //8bit or 16bit uint
+      
+      LOG(INFO)<< "depth value sampler1 :************************************************************* " << unsigned(cv_depth_image_pt->image.at<uint16_t>(950,900)) << std::endl; 
+      LOG(INFO)<< "depth value sampler2 :************************************************************* " << unsigned(cv_depth_image_pt->image.at<uint16_t>(950,909)) << std::endl; 
+      }     
+      else if(frame_count == 3){
+      LOG(INFO)<< "frame_count for depth from 2: :************************************************************* " << frame_count - 1 << std::endl; 
+      
+      cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000014_depth.tif", cv::IMREAD_ANYDEPTH);  //16bit
+      //cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000004_depth.png", cv::IMREAD_ANYDEPTH); 
+      //8bit or 16bit uint
+      
+      LOG(INFO)<< "depth value sampler1 :************************************************************* " << unsigned(cv_depth_image_pt->image.at<uint16_t>(950,900)) << std::endl; 
+      LOG(INFO)<< "depth value sampler2 :************************************************************* " << unsigned(cv_depth_image_pt->image.at<uint16_t>(950,909)) << std::endl; 
+      }        
+      else{
+      LOG(INFO)<< "frame_count for depth from 3: :************************************************************* " << frame_count - 1 << std::endl; 
+      
+      cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000019_depth.tif", cv::IMREAD_ANYDEPTH);  //16bit
+      //cv_depth_image_pt->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/disparity_depth_converter/munster_000173_000004_depth.png", cv::IMREAD_ANYDEPTH); 
+      //8bit or 16bit uint
+      
+      LOG(INFO)<< "depth value sampler1 :************************************************************* " << unsigned(cv_depth_image_pt->image.at<uint16_t>(950,900)) << std::endl; 
+      LOG(INFO)<< "depth value sampler2 :************************************************************* " << unsigned(cv_depth_image_pt->image.at<uint16_t>(950,909)) << std::endl;  
+      }
   }
 
 
@@ -414,7 +452,7 @@ class DepthSegmentationNode {
                   cv::Mat* rescaled_depth, cv::Mat* dilated_rescaled_depth,
                   cv_bridge::CvImagePtr cv_rgb_image,
                   cv_bridge::CvImagePtr cv_depth_image, cv::Mat* bw_image,
-                  cv::Mat* mask) {
+                  cv::Mat* mask, const uint16_t frame_count) {
     CHECK_NOTNULL(rescaled_depth);
     CHECK_NOTNULL(dilated_rescaled_depth);
     CHECK(cv_rgb_image);
@@ -430,7 +468,7 @@ class DepthSegmentationNode {
       //    depth_msg, sensor_msgs::image_encodings::TYPE_16UC1);
       
       cv_bridge::CvImagePtr cv_depth_image_pt(new cv_bridge::CvImage);
-      readImageFromLocal1(cv_depth_image_pt);
+      readImageFromLocal1(cv_depth_image_pt, frame_count);
       
       LOG(INFO)<< "read depth image type1:************************************************************* "<< cv_depth_image_pt->image.type() << std::endl;
       // 0: cv_8UC1
@@ -554,10 +592,10 @@ class DepthSegmentationNode {
     // from CV_32FC1 to CV_32FC3
     depth_segmenter_.computeDepthMap(rescaled_depth, depth_map);
 
-    static const std::string kWindowName0 = "depth map Image";
-    cv::namedWindow(kWindowName0, cv::WINDOW_AUTOSIZE);
-    imshow(kWindowName0, *depth_map);
-    cv::waitKey(1);
+    //static const std::string kWindowName0 = "depth map Image";
+    //cv::namedWindow(kWindowName0, cv::WINDOW_AUTOSIZE);
+    //imshow(kWindowName0, *depth_map);
+    //cv::waitKey(1);
     cv::imwrite(
         std::to_string(depth_msg->header.stamp.toSec()) + "_depth_map_image.png",
         *depth_map);   
@@ -640,7 +678,7 @@ class DepthSegmentationNode {
       cv::Mat rescaled_depth, dilated_rescaled_depth, bw_image, mask, depth_map,
           normal_map, edge_map;
       preprocess(depth_msg, rgb_msg, &rescaled_depth, &dilated_rescaled_depth,
-                 cv_rgb_image, cv_depth_image, &bw_image, &mask);
+                 cv_rgb_image, cv_depth_image, &bw_image, &mask,0);
 
 
       if (!camera_tracker_.getRgbImage().empty() &&
@@ -691,15 +729,52 @@ class DepthSegmentationNode {
     if (camera_info_ready_) {
       cv_bridge::CvImagePtr cv_rgb_image(new cv_bridge::CvImage);
       //cv_rgb_image = cv_bridge::toCvCopy(rgb_msg, rgb_msg->encoding);
-
-      cv_rgb_image->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/data/leftImg8bit_sequence/val/munster/munster_000173_000004_leftImg8bit.png", cv::IMREAD_COLOR);
+      frame_count_ = frame_count_ + 1;
+      
+      if (frame_count_  == 1) {
+        LOG(INFO)<< "Frame cnt: ()()()()()()()()()()()()()()()()()()()()()()() from 0: " << frame_count_ - 1 << std::endl;
+        cv_rgb_image->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/data/leftImg8bit_sequence/val/munster/munster_000173_000004_leftImg8bit.png", cv::IMREAD_COLOR);
      
-      LOG(INFO)<< "cv rgb image :************************************************************* " << cv_rgb_image->image.size() << std::endl;
+        LOG(INFO)<< "cv rgb image :************************************************************* " << cv_rgb_image->image.size() << std::endl;
       //static const std::string kWindowName = "RGB Image";
       //cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
       //imshow(kWindowName, cv_rgb_image->image);
       //cv::waitKey(1);
 
+      }
+      else if (frame_count_ == 2){
+        LOG(INFO)<< "Frame cnt: ()()()()()()()()()()()()()()()()()()()()()()() from 1: " << frame_count_ - 1 << std::endl;
+        cv_rgb_image->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/data/leftImg8bit_sequence/val/munster/munster_000173_000009_leftImg8bit.png", cv::IMREAD_COLOR);
+     
+        LOG(INFO)<< "cv rgb image :************************************************************* " << cv_rgb_image->image.size() << std::endl;
+        //static const std::string kWindowName = "RGB Image";
+        //cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
+        //imshow(kWindowName, cv_rgb_image->image);
+        //cv::waitKey(1);          
+      }
+      else if (frame_count_ == 3){
+        LOG(INFO)<< "Frame cnt: ()()()()()()()()()()()()()()()()()()()()()()() from 1: " << frame_count_ - 1 << std::endl;
+        cv_rgb_image->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/data/leftImg8bit_sequence/val/munster/munster_000173_000014_leftImg8bit.png", cv::IMREAD_COLOR);
+     
+        LOG(INFO)<< "cv rgb image :************************************************************* " << cv_rgb_image->image.size() << std::endl;
+        //static const std::string kWindowName = "RGB Image";
+        //cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
+        //imshow(kWindowName, cv_rgb_image->image);
+        //cv::waitKey(1);          
+      }
+      else {
+        LOG(INFO)<< "Frame cnt: ()()()()()()()()()()()()()()()()()()()()()()() from 1: " << frame_count_ - 1 << std::endl;
+        cv_rgb_image->image = cv::imread("/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/data/leftImg8bit_sequence/val/munster/munster_000173_000019_leftImg8bit.png", cv::IMREAD_COLOR);
+     
+        LOG(INFO)<< "cv rgb image :************************************************************* " << cv_rgb_image->image.size() << std::endl;
+        //static const std::string kWindowName = "RGB Image";
+        //cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
+        //imshow(kWindowName, cv_rgb_image->image);
+        //cv::waitKey(1);          
+      }      
+      
+      
+      
       if (rgb_msg->encoding == sensor_msgs::image_encodings::BGR8) {
         cv::cvtColor(cv_rgb_image->image, cv_rgb_image->image, CV_BGR2RGB);
       }
@@ -710,7 +785,7 @@ class DepthSegmentationNode {
 
 
       preprocess(depth_msg, rgb_msg, &rescaled_depth, &dilated_rescaled_depth,
-                 cv_rgb_image, cv_depth_image, &bw_image, &mask);
+                 cv_rgb_image, cv_depth_image, &bw_image, &mask, frame_count_);
 
 
       LOG(INFO)<< "Preprocess is done :************************************************************* " << cv_depth_image->image.size() << std::endl;

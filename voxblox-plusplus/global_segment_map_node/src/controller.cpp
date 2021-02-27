@@ -133,7 +133,8 @@ Controller::Controller(ros::NodeHandle* node_handle_private)
       need_full_remesh_(false),
       enable_semantic_instance_segmentation_(true),
       compute_and_publish_bbox_(false),
-      use_label_propagation_(true) {
+      use_label_propagation_(true),
+      controller_frame_cnt_(0){
   CHECK_NOTNULL(node_handle_private_);
   node_handle_private_->param<std::string>("world_frame_id", world_frame_,
                                            world_frame_);
@@ -422,6 +423,23 @@ void Controller::processSegment(
 
     // refer to catkin_ws_VoSM_VPanoSeg/src/minkindr_ros/minkindr_conversions/include/minkindr_conversions/kindr_tf.h
     
+    Transformation T_G_C_city;
+    
+    LOG(INFO)<< "TGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGC" << std::endl;
+    LOG(INFO)<< "frame count in controller TGC: " << controller_frame_cnt_ << std::endl;    
+    
+    float z_transit, z_transit2, z_transit3;
+
+    float time_span1 = (529338336  - 235261352) / 1e9;
+    z_transit = 3.03 * time_span1;
+    
+    float time_span2 = ( 823415376 - 529338336) / 1e9;
+    z_transit2 = 3.04 * time_span2;
+    
+    float time_span3 = (1117492336  - 823415376) / 1e9;
+    z_transit3 = 3.26 * time_span3;
+    
+    if(controller_frame_cnt_ == 0){
     tf::Transform tf_transform_city;
     tf::Vector3 origin;
     origin.setX(0);
@@ -433,13 +451,80 @@ void Controller::processSegment(
     //rotation = tf::createIdentityQuaternion();
     tf_transform_city.setOrigin(origin);
     tf_transform_city.setRotation(rotation);
-    Transformation T_G_C_city;
     tf::transformTFToKindr(tf_transform_city, &T_G_C_city);
-   
+    
   
     LOG(INFO)<< "TGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGC" << std::endl;
-    LOG(INFO)<< "Transform Look Up: " << T_G_C_city << std::endl;
-   
+    LOG(INFO)<< "Transform Look Up0: " << T_G_C_city << std::endl;
+    }
+    else if(controller_frame_cnt_ == 1){
+
+    LOG(INFO) << "time: " << time_span1 << std::endl;
+    tf::Transform tf_transform_city;
+    tf::Vector3 origin;
+    origin.setX(0);
+    origin.setY(0);
+    origin.setZ(z_transit); 
+    //setZero ()
+    tf::Quaternion rotation(0, 0, 0, 1); // x, y, z, w in orde
+    //tf::Quaternion createIdentityQuaternion()    
+    //rotation = tf::createIdentityQuaternion();
+    tf_transform_city.setOrigin(origin);
+    tf_transform_city.setRotation(rotation);
+
+    tf::transformTFToKindr(tf_transform_city, &T_G_C_city);
+    
+  
+    LOG(INFO)<< "TGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGC" << std::endl;
+    LOG(INFO)<< "Transform Look Up1: " << T_G_C_city << std::endl;
+    
+    }
+    else if(controller_frame_cnt_ == 2){
+
+    LOG(INFO) << "time: " << time_span2 << std::endl;
+    tf::Transform tf_transform_city;
+    tf::Vector3 origin;
+    origin.setX(0);
+    origin.setY(0);
+    origin.setZ(z_transit + z_transit2); 
+    //setZero ()
+    tf::Quaternion rotation(0, 0, 0, 1); // x, y, z, w in orde
+    //tf::Quaternion createIdentityQuaternion()    
+    //rotation = tf::createIdentityQuaternion();
+    tf_transform_city.setOrigin(origin);
+    tf_transform_city.setRotation(rotation);
+
+    tf::transformTFToKindr(tf_transform_city, &T_G_C_city);
+    
+  
+    LOG(INFO)<< "TGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGC" << std::endl;
+    LOG(INFO)<< "Transform Look Up 2: " << T_G_C_city << std::endl;
+    
+    }
+    else {
+
+    LOG(INFO) << "time: " << time_span3 << std::endl;
+    tf::Transform tf_transform_city;
+    tf::Vector3 origin;
+    origin.setX(0);
+    origin.setY(0);
+    origin.setZ(z_transit + z_transit2 + z_transit3); 
+    //setZero ()
+    tf::Quaternion rotation(0, 0, 0, 1); // x, y, z, w in orde
+    //tf::Quaternion createIdentityQuaternion()    
+    //rotation = tf::createIdentityQuaternion();
+    tf_transform_city.setOrigin(origin);
+    tf_transform_city.setRotation(rotation);
+
+    tf::transformTFToKindr(tf_transform_city, &T_G_C_city);
+    
+  
+    LOG(INFO)<< "TGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGCTGC" << std::endl;
+    LOG(INFO)<< "Transform Look Up 3: " << T_G_C_city << std::endl;
+    
+    }
+            
+    
     T_G_C = T_G_C_city;
     
     // Convert the PCL pointcloud into voxblox format.
@@ -517,6 +602,43 @@ void Controller::integrateFrame(ros::Time msg_timestamp) {
   timing::Timer integrate_timer("integrate_frame_pointclouds");
   Transformation T_G_C = segments_to_integrate_.at(0)->T_G_C_;
   Pointcloud point_cloud_all_segments_t;
+  
+  
+ 
+  LOG(INFO)<< "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDbug" << std::endl;
+  
+  for (Segment* segment : segments_to_integrate_) {
+    LOG(INFO)<< "original  insance label: "  << unsigned(segment->instance_label_) << std::endl;
+    LOG(INFO)<< "original  geo label: "      << segment->label_ << std::endl;
+    LOG(INFO)<< "original  semantic label: " << unsigned(segment->semantic_label_) << std::endl;
+      
+// //     if(segment->semantic_label_ <= 10u) {
+// //     // stuff
+// //       LOG(INFO)<< "original wall insance label: " << unsigned(segment->instance_label_) << std::endl;
+// //       LOG(INFO)<< "original wall geo label: " << segment->label_ << std::endl;
+// // 
+// //       segment->instance_label_ = 0u;
+// //       segment->label_ = 1000;      
+// //     }
+//     else if(segment->semantic_label_ == 85u){
+//     // floor
+//       LOG(INFO)<< "original floor insance label: " << unsigned(segment->instance_label_) << std::endl;
+//       LOG(INFO)<< "original floor geo label: " << segment->label_ << std::endl;  
+//       segment->instance_label_ = 100u;
+//       segment->label_ = 2000; 
+//     }
+//     
+    
+    //else {
+    //  LOG(INFO)<< "Do nothing for non stuff (thing) " << std::endl;
+    //}
+
+  }  
+  
+  
+  
+  
+  
   for (Segment* segment : segments_to_integrate_) {
     // Concatenate point clouds. (NOTE(ff): We should probably just use
     // the original cloud here instead.)
@@ -599,6 +721,8 @@ void Controller::segmentPointCloudCallback(
   if (received_first_message_ &&
       last_segment_msg_timestamp_ != segment_point_cloud_msg->header.stamp) {
     if (segments_to_integrate_.size() > 0u) {
+      //for frame count    
+      controller_frame_cnt_ = controller_frame_cnt_ + 1;  
       integrateFrame(segment_point_cloud_msg->header.stamp);
     } else {
       ROS_INFO("No segments to integrate.");

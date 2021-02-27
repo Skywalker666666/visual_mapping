@@ -39,12 +39,23 @@ void Visualizer::visualizeMesh() {
     visualizer->initCameraParameters();
     // TODO(grinvalm): find some general default parameters.
     // scenenn231
-    visualizer->setCameraPosition(-1.41162, 6.28602, -0.300336, -1.49346,
-                                  0.117437, 0.0843885, 0.0165199, -0.0624571,
-                                  -0.997911);
-    visualizer->setCameraClipDistances(1.79126, 8.86051);
+//     visualizer->setCameraPosition(-1.41162, 6.28602, -0.300336, -1.49346,
+//                                   0.117437, 0.0843885, 0.0165199, -0.0624571,
+//                                   -0.997911);
+//    visualizer->setCameraClipDistances(1.79126, 8.86051);
+//     visualizer->setSize(1900, 1300);
+//     visualizer->setPosition(650, 800);
 
-    visualizer->setSize(1900, 1300);
+    
+    
+    // cityscape munster173
+    visualizer->setCameraPosition(0, -1, 0, 
+                                  0, -0.7, 3, 
+                                  0, -1, 0); 
+    visualizer->setCameraClipDistances(0, 50);
+    
+
+    visualizer->setSize(1700, 1100);
     visualizer->setPosition(650, 800);
 
     pcl_visualizers.push_back(visualizer);
@@ -52,7 +63,7 @@ void Visualizer::visualizeMesh() {
 
   while (true) {
     for (int index = 0; index < n_visualizers; ++index) {
-      constexpr int kUpdateIntervalMs = 1000;
+      constexpr int kUpdateIntervalMs = 250;
       pcl_visualizers[index]->spinOnce(kUpdateIntervalMs);
     }
     meshes.clear();

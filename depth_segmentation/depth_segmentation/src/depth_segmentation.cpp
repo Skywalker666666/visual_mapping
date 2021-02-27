@@ -477,14 +477,14 @@ void DepthSegmenter::computeNormalMap(const cv::Mat& depth_map,
   } else {
     computeOwnNormals(params_.normals, depth_map, normal_map);
   }
-  //if (params_.normals.display) {
+  if (params_.normals.display) {
     static const std::string kWindowName = "NormalMap";
     cv::namedWindow(kWindowName, cv::WINDOW_AUTOSIZE);
     // Taking the negative values of the normal map, as all normals point in
     // negative z-direction.
     cv::imshow(kWindowName, -*normal_map);
     cv::waitKey(1);
-  //}
+  }
 }
 
 void DepthSegmenter::computeMinConvexityMap(const cv::Mat& depth_map,
@@ -1176,14 +1176,37 @@ void DepthSegmenter::labelMap(const sensor_msgs::Image::ConstPtr& depth_msg,
     }
 
     if (max_overlap_size > 0) {
-      // Found a maximally overlapping mask, assign
-      // the corresponding semantic and instance labels.
-      (*segments)[i].semantic_label.insert(
-          instance_segmentation.labels[maximally_overlapping_mask_index]);
-      // Instance label 0u corresponds to a segment with no overlapping
-      // mask, thus the assigned index is incremented by 1u.
-      (*segments)[i].instance_label.insert(maximally_overlapping_mask_index +
-                                           1u);
+        
+      if (instance_segmentation.labels[maximally_overlapping_mask_index] <= 10){
+        // Found a maximally overlapping mask, assign
+        // the corresponding semantic and instance labels.
+        (*segments)[i].semantic_label.insert(
+            instance_segmentation.labels[maximally_overlapping_mask_index]);
+        // Instance label 0u corresponds to a segment with no overlapping
+        // mask, thus the assigned index is incremented by 1u.
+        (*segments)[i].instance_label.insert(maximally_overlapping_mask_index +
+                                            1u);           
+        //(*segments)[i].instance_label.insert(0u);
+      }
+      else if(instance_segmentation.labels[maximally_overlapping_mask_index] >= 11){
+        // Found a maximally overlapping mask, assign
+        // the corresponding semantic and instance labels.
+        //(*segments)[i].semantic_label.insert(13u);
+        (*segments)[i].semantic_label.insert(
+        instance_segmentation.labels[maximally_overlapping_mask_index]);
+        // Instance label 0u corresponds to a segment with no overlapping
+        // mask, thus the assigned index is incremented by 1u.
+        (*segments)[i].instance_label.insert(maximally_overlapping_mask_index +
+                                            1u);          
+      }
+      else{
+        LOG(INFO) << "IT IS WRONG+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+        LOG(INFO) << "IT IS WRONG+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+        LOG(INFO) << "IT IS WRONG+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+        LOG(INFO) << "IT IS WRONG+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+        LOG(INFO) << "IT IS WRONG+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+        LOG(INFO) << "IT IS WRONG+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+      }
     }
   }  
   

@@ -12,8 +12,8 @@ namespace voxblox {
 
 class SemanticColorMap {
  public:
-  enum ClassTask { kCoco80 = 0, kNyu13 };
-
+//  enum ClassTask { kCoco80 = 0, kNyu13 = 1, cityScape};
+  enum ClassTask { kCoco80 = 0, kNyu13};
   static SemanticColorMap create(const ClassTask& class_task);
 
   SemanticColorMap(const std::vector<std::array<float, 3>>& color_code)
@@ -36,6 +36,15 @@ class CocoColorMap : public SemanticColorMap {
  public:
   CocoColorMap();
 };
+
+// COCO 80 class task color coding using the PASCAL VOC color map.
+//class CityScapeColorMap : public SemanticColorMap {
+// public:
+//  CityScapeColorMap();
+//};
+
+
+
 }  // namespace voxblox
 
 #endif  // GLOBAL_SEGMENT_MAP_MESHING_SEMANTIC_COLOR_MAP_H_

@@ -119,6 +119,7 @@ SemanticLabel SemanticInstanceLabelFusion::getSemanticLabel(
     for (auto const& class_count : label_it->second) {
       if (class_count.second > max_count &&
           class_count.first != BackgroundLabel) {
+      //if (class_count.second > max_count) {
         semantic_label = class_count.first;
         max_count = class_count.second;
       }

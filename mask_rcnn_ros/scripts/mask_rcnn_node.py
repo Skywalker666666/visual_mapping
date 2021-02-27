@@ -57,15 +57,15 @@ class MaskRCNNNode(object):
         self._visualization = rospy.get_param('~visualization', True)
 
         # Create model object in inference mode.
-        self._model = modellib.MaskRCNN(mode="inference", model_dir="",
-                                        config=config)
+        #self._model = modellib.MaskRCNN(mode="inference", model_dir="",
+                                        #config=config)
         # Load weights trained on MS-COCO
         model_path = rospy.get_param('~model_path', COCO_MODEL_PATH)
         # Download COCO trained weights from Releases if needed
-        if model_path == COCO_MODEL_PATH and not os.path.exists(COCO_MODEL_PATH):
-            utils.download_trained_weights(COCO_MODEL_PATH)
+        #if model_path == COCO_MODEL_PATH and not os.path.exists(COCO_MODEL_PATH):
+            #utils.download_trained_weights(COCO_MODEL_PATH)
 
-        self._model.load_weights(model_path, by_name=True)
+        #self._model.load_weights(model_path, by_name=True)
 
         self._class_names = rospy.get_param('~class_names', CLASS_NAMES)
 
@@ -94,15 +94,36 @@ class MaskRCNNNode(object):
 
             if msg is not None:
                 #np_image = self._cv_bridge.imgmsg_to_cv2(msg, 'bgr8')
-                img_cityscape = "/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/work_dirs/cityscapes_vps/fusetrack_vpct/test_pans_unified/pan_pred/0500_2995_munster_000173_000004.png"
- 
+                if msg.header.stamp.to_sec() < 0.5:
+                    print("^^^^^^^^^^^^^^^^^^Get image 1")
+                    print(str(msg.header.stamp.to_sec()))
+                    img_cityscape = "/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/work_dirs/cityscapes_vps/fusetrack_vpct/test_pans_unified/pan_pred/0500_2995_munster_000173_000004.png"
+                elif 0.5 <= msg.header.stamp.to_sec() < 2:
+                    print("^^^^^^^^^^^^^^^^^^Get image 2")
+                    print(str(msg.header.stamp.to_sec()))
+                    img_cityscape = "/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/work_dirs/cityscapes_vps/fusetrack_vpct/test_pans_unified/pan_pred/0500_2996_munster_000173_000009.png"
+                elif 2 <= msg.header.stamp.to_sec() < 3.9:
+                    print("^^^^^^^^^^^^^^^^^^Get image 3")
+                    print(str(msg.header.stamp.to_sec()))
+                    img_cityscape = "/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/work_dirs/cityscapes_vps/fusetrack_vpct/test_pans_unified/pan_pred/0500_2997_munster_000173_000014.png"
+                else:
+                    print("^^^^^^^^^^^^^^^^^^Get image 4")
+                    print(str(msg.header.stamp.to_sec()))
+                    img_cityscape = "/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/work_dirs/cityscapes_vps/fusetrack_vpct/test_pans_unified/pan_pred/0500_2998_munster_000173_000019.png"
+
+
+
+
+
+
+            
                 np_image = np.uint32(cv2.imread(img_cityscape))
  
                 # Run detection
                 print("Run detection")
                 #results = self._model.detect([np_image], verbose=0)
                 OFFSET = 256
-                #BGR?
+                #BGR, yes, verified, here it is BGR
                 result = np_image[:, :, 0] + OFFSET * np_image[:, :, 1] + OFFSET * OFFSET * np_image[:, :, 2] 
                 result_msg = self._build_result_msg(msg, result)
                 self._result_pub.publish(result_msg)
@@ -116,20 +137,48 @@ class MaskRCNNNode(object):
             rate.sleep()
 
     def _build_result_msg(self, msg, result):
+        # RGB color code for Cityscape semantic class
+        # 0 - 10
+        cityscapes_vps_color =[[128, 64, 128], [244, 35, 232], [70, 70, 70], [102, 102, 156], 
+                               [190, 153, 153], [153, 153, 153], [250, 170, 30], [220, 220, 0], 
+                               [107, 142, 35], [152, 251, 152], [70, 130, 180]]
+        
+        # 11, 12, 13, 14
+        cisc_vps_munster173_instance_colr = [[0,0,142],[0,6,155],[6,20,134],[24,0,156]]
+        
         result_msg = Result()
         result_msg.header = msg.header
         
         l = np.unique(result)
         
         for el in l:
+            if el == 180 + 256 * 130 + 256 * 256 * 70:
+                # sky: color[]
+                print("sky is here^^^^^^^^^^^^^^^^^^^^: ")
+                continue
             sem_mask = (result == el) * 1 
             #if np.sum(sem_mask) > 64 * 64:
+            
             if np.sum(sem_mask) > 4 * 4:
                 C1 = el % 256
                 C2 = (el // 256) % 256
                 C3 = ((el // 256) // 256)
-            
-                result_msg.class_ids.append(np.uint8(C1))
+                #print("C1: " + str(C1))
+                #print("C2: " + str(C2))
+                #print("C3: " + str(C3))
+                sem_id = 0
+                for i,ele in enumerate(cityscapes_vps_color):
+                    # BGR and RGB
+                    if [C3,C2, C1] == ele:
+                        sem_id = i
+                        break
+                for j,ele2 in enumerate(cisc_vps_munster173_instance_colr):
+                    if [C3,C2,C1]  == ele2:
+                        sem_id = j + 11
+                        break
+     
+                #print("^^^^^^^^^^^^^^^^^^^^^^^^^^^sem_id: " + str(sem_id))
+                result_msg.class_ids.append(np.uint8(sem_id))
                 mask = Image()
                 mask.header = msg.header
                 mask.height = result.shape[0]
@@ -198,7 +247,7 @@ class MaskRCNNNode(object):
 
 
 def main():
-    rospy.init_node('mask_rcnn')
+    rospy.init_node('mask_rcnn', log_level=rospy.INFO)
 
     node = MaskRCNNNode()
     node.run()
