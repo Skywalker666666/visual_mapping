@@ -10,13 +10,25 @@
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "gsm_node");
+
+  //google::SetLogDestination(google::GLOG_INFO, "");
+  // this one has to be called before the init
+  FLAGS_log_dir = "/home/zhiliu/Documents/catkin_ws_VoSM_UPS/outputs/logs/";
+
   google::InitGoogleLogging(argv[0]);
   google::ParseCommandLineFlags(&argc, &argv, false);
   google::InstallFailureSignalHandler();
 
-  FLAGS_stderrthreshold = 1;
+  // The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
+  //FLAGS_stderrthreshold = 1;
+  FLAGS_stderrthreshold = 0;
+  // not only log file also stderr
+  FLAGS_alsologtostderr = true;
+  // set the path for log files 
+
   ros::NodeHandle node_handle;
   ros::NodeHandle node_handle_private("~");
+
 
   voxblox::voxblox_gsm::Controller* controller;
   LOG(INFO) << "Starting Voxblox++ node.";

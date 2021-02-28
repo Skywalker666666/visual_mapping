@@ -5,8 +5,9 @@ import threading
 import sys
 #ros_path = '/opt/ros/melodic/lib/python2.7/dist-packages'
 ros_path2 = '/home/zhiliu/Documents/catkin_ws_VoSM_UPS/devel/lib/python2.7/dist-packages'
-ros_path3 = '/home/zhiliu/Documents/Weapons/catkin_workspace_bridge/install/lib/python3.7/site-packages'
+#ros_path3 = '/home/zhiliu/Documents/Weapons/catkin_workspace_bridge/install/lib/python3.7/site-packages'
 #ros_path3 = '/home/zhiliu/Documents/Weapons/catkin_workspace_bridge_py3p5/install/lib/python3.5/site-packages'
+ros_path4 = '/home/zhiliu/Documents/Weapons/catkin_workspace_bridge_py3p6/install/lib/python3.6/site-packages'
 
 #if ros_path in sys.path:
 #    sys.path.remove(ros_path)
@@ -14,7 +15,7 @@ ros_path3 = '/home/zhiliu/Documents/Weapons/catkin_workspace_bridge/install/lib/
 if ros_path2 in sys.path:
     sys.path.remove(ros_path2)
 
-sys.path.insert(1,ros_path3)
+sys.path.insert(1,ros_path4)
 
 import torch
 import torch.nn as nn
@@ -44,10 +45,12 @@ import math
 sys.path.append(ros_path2)
 
 src_sys2 = os.path.dirname(__file__)
+print(src_sys2)
 #sys.path.insert(1, src_sys2)
 #sys.path.insert(1, os.path.join(src_sys2, '../src/'))
 sys.path.insert(1, os.path.join(src_sys2, '../src/'))
 sys.path.insert(1, os.path.join(src_sys2, '../src/upsnet'))
+sys.path.insert(1, os.path.join(src_sys2, '../../'))
 print(sys.path)
 
 
@@ -55,7 +58,11 @@ from upsnet.config.config import *
 from upsnet.config.parse_args import parse_args
 from upsnet.models import *
 from upsnet.dataset.base_dataset_special import *
-from PIL import Image, ImageDraw
+#from PIL import Image as PILImage
+# if we need to use this, we need use it as PILImage
+from ups_panseg_ros.msg import Result
+
+
 
 
 # Local path to trained weights file
@@ -107,7 +114,7 @@ class UPSPanSegNode(object):
    
 
     def run(self):
-        self._result_pub = rospy.Publisher('~psp_result', Result, queue_size=1)
+        self._result_pub = rospy.Publisher('~ups_result', Result, queue_size=1)
         #vis_pub = rospy.Publisher('~visualization', Image, queue_size=1)
         rospy.Subscriber('~input', Image,
                          self._image_callback, queue_size=1)
@@ -218,34 +225,51 @@ class UPSPanSegNode(object):
         result_msg = Result()
         result_msg.header = msg.header
         #segments categories:
-        predicted_categories = list(np.unique(result[:,:,0]))
-        predicted_instances  = list(np.unique(result[:,:,1]))
+        #predicted_categories = list(np.unique(result[:,:,0]))
+        #predicted_instances  = list(np.unique(result[:,:,1]))
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # convert to np.uint32 is important, because 25 * 1000 is maximum
+        pan_2ch = np.uint32(result)
+        OFFSET = 1000
+        VOID   = 255
+        pan = OFFSET * pan_2ch[:, :, 0] + pan_2ch[:, :, 1]
+        l = np.unique(pan)
+        print("pan: ")
+        print(np.unique(pan))
+        
+        for el in l:
+            # floor division, very cool
+            print("el: ")
+            print(el)
 
-        for i, category in enumerate(predicted_categories):
-            #print('Category: ')
-            #print(category)
-            #print("category_id: int(category) + 300 ")
-            #print(str(category + 300))
-            #print(ade20k_id2label[int(category)].name)
-            if ade20k_id2label[int(category)].name == 'wall' or ade20k_id2label[int(category)].name == 'floor' or ade20k_id2label[int(category)].name == 'ceiling':
-                print("category_id: int(category) + 82 ")
-                print(str(category + 82))
+            category = el // OFFSET
+            if category == VOID:
+                continue
+            sem_mask = (pan == el)
+            # id 42: floor_merged
+            # id 51: wall_other_merged
+            # id 52: rug_merged
 
-                print(ade20k_id2label[int(category)].name)
-                # offset to avoid the conflict of two dataset, coco and ade20k
-                # watch out, it is uin8 for id in voxblox <255
-                result_msg.class_ids.append(np.uint8(category) + 82)
-                result_msg.class_names.append(ade20k_id2label[int(category)].name)
+            #if int(category) >= 53 or int(category) == 41 or int(category) == 42 or int(category) == 51 or #int(category) == 52:
+            print("size of mask: " + str(sum(sum(sem_mask*1))))
+            if int(category) >= 0 and sum(sum(sem_mask*1)) > 20:
+                #print("category_id: coco panoptic categories annotation")
+                #print(" sem: " + str(category) + " of pan: " + str(el))
+                print("size of mask: " + str(sum(sum(sem_mask*1))))
+                
+                # watch out, it is uin8 for id in voxblox <= 255
+                result_msg.class_ids.append(np.uint8(category))
+                #result_msg.class_names.append()
                 mask = Image()
                 mask.header = msg.header
-                mask.height = result.shape[0]
+                mask.height = result[:,:,0].shape[0]
                 #print("height: " + str(mask.height))
-                mask.width  = result.shape[1]
+                mask.width  = result[:,:,0].shape[1]
                 #print("width: " + str(mask.width))
                 mask.encoding = "mono8"
                 mask.is_bigendian = False
                 mask.step = mask.width
-                binary_mask = (np.isin(result, category) * 1)
+                binary_mask = sem_mask * 1
                 uint8_binary_mask = binary_mask.astype(np.uint8)
                 mask.data = (uint8_binary_mask * 255).tobytes()
                 result_msg.masks.append(mask)
@@ -293,7 +317,7 @@ class UPSPanSegNode(object):
             self._msg_lock.release()
 
 def main():
-    rospy.init_node('psp_semseg')
+    rospy.init_node('ups_panseg')
 
     node = UPSPanSegNode()
     node.run()

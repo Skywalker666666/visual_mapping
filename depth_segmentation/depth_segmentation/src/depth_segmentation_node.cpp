@@ -20,8 +20,8 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#ifdef MASKRCNNROS_AVAILABLE
-#include <mask_rcnn_ros/Result.h>
+#ifdef UPSPANROS_AVAILABLE
+#include <ups_panseg_ros/Result.h>
 #endif
 
 #include "depth_segmentation/depth_segmentation.h"
@@ -93,19 +93,19 @@ class DepthSegmentationNode {
 
     constexpr int kQueueSize = 30;
 
-#ifndef MASKRCNNROS_AVAILABLE
+#ifndef UPSPANROS_AVAILABLE
     if (params_.semantic_instance_segmentation.enable) {
       params_.semantic_instance_segmentation.enable = false;
       ROS_WARN_STREAM(
           "Turning off semantic instance segmentation "
-          "as mask_rcnn_ros is disabled.");
+          "as ups_panseg_ros is disabled.");
     }
 #endif
 
     if (params_.semantic_instance_segmentation.enable) {
-#ifdef MASKRCNNROS_AVAILABLE
+#ifdef UPSPANROS_AVAILABLE
       instance_segmentation_sub_ =
-          new message_filters::Subscriber<mask_rcnn_ros::Result>(
+          new message_filters::Subscriber<ups_panseg_ros::Result>(
               node_handle_, semantic_instance_segmentation_topic_, 1);
 
       image_segmentation_sync_policy_ =
@@ -151,9 +151,9 @@ class DepthSegmentationNode {
                                                           sensor_msgs::Image>
       ImageSyncPolicy;
 
-#ifdef MASKRCNNROS_AVAILABLE
+#ifdef UPSPANROS_AVAILABLE
   typedef message_filters::sync_policies::ApproximateTime<
-      sensor_msgs::Image, sensor_msgs::Image, mask_rcnn_ros::Result>
+      sensor_msgs::Image, sensor_msgs::Image, ups_panseg_ros::Result>
       ImageSegmentationSyncPolicy;
 #endif
 
@@ -193,8 +193,8 @@ class DepthSegmentationNode {
 
   message_filters::Synchronizer<CameraInfoSyncPolicy>* camera_info_sync_policy_;
 
-#ifdef MASKRCNNROS_AVAILABLE
-  message_filters::Subscriber<mask_rcnn_ros::Result>*
+#ifdef UPSPANROS_AVAILABLE
+  message_filters::Subscriber<ups_panseg_ros::Result>*
       instance_segmentation_sub_;
   message_filters::Synchronizer<ImageSegmentationSyncPolicy>*
       image_segmentation_sync_policy_;
@@ -330,9 +330,9 @@ class DepthSegmentationNode {
     }
   }
 
-#ifdef MASKRCNNROS_AVAILABLE
+#ifdef UPSPANROS_AVAILABLE
   void semanticInstanceSegmentationFromRosMsg(
-      const mask_rcnn_ros::Result::ConstPtr& segmentation_msg,
+      const ups_panseg_ros::Result::ConstPtr& segmentation_msg,
       depth_segmentation::SemanticInstanceSegmentation*
           semantic_instance_segmentation) {
     semantic_instance_segmentation->masks.reserve(
@@ -533,11 +533,11 @@ class DepthSegmentationNode {
     }
   }
 
-#ifdef MASKRCNNROS_AVAILABLE
+#ifdef UPSPANROS_AVAILABLE
   void imageSegmentationCallback(
       const sensor_msgs::Image::ConstPtr& depth_msg,
       const sensor_msgs::Image::ConstPtr& rgb_msg,
-      const mask_rcnn_ros::Result::ConstPtr& segmentation_msg) {
+      const ups_panseg_ros::Result::ConstPtr& segmentation_msg) {
     depth_segmentation::SemanticInstanceSegmentation instance_segmentation;
     semanticInstanceSegmentationFromRosMsg(segmentation_msg,
                                            &instance_segmentation);
@@ -569,7 +569,10 @@ class DepthSegmentationNode {
         edge_map = remove_no_values;
         std::vector<depth_segmentation::Segment> segments;
         std::vector<cv::Mat> segment_masks;
-
+        
+        //actually instance_segmentation here combines both segment and instance,
+        //it is panoptic sementation from panoptic.
+        //To Do: merge code to support all modes.
         depth_segmenter_.labelMap(cv_rgb_image->image, rescaled_depth,
                                   instance_segmentation, depth_map, edge_map,
                                   normal_map, &label_map, &segment_masks,

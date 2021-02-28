@@ -1019,16 +1019,83 @@ void DepthSegmenter::labelMap(
         max_overlap_size = overlap_size;
       }
     }
-
+    // Strategy 1:
+    /*
     if (max_overlap_size > 0) {
-      // Found a maximally overlapping mask, assign
-      // the corresponding semantic and instance labels.
-      (*segments)[i].semantic_label.insert(
-          instance_segmentation.labels[maximally_overlapping_mask_index]);
-      // Instance label 0u corresponds to a segment with no overlapping
-      // mask, thus the assigned index is incremented by 1u.
-      (*segments)[i].instance_label.insert(maximally_overlapping_mask_index +
-                                           1u);
+      int pan_category;
+      //floor division
+      LOG(INFO) << "category Label: " << instance_segmentation.labels[maximally_overlapping_mask_index]; 
+      //LOG(INFO) << "category Label / 1000: " << instance_segmentation.labels[maximally_overlapping_mask_index]/1000; 
+      
+      // if format is offseted id
+      //pan_category = instance_segmentation.labels[maximally_overlapping_mask_index] / 1000;
+      // if format is semseg in pan2ch
+      pan_category = instance_segmentation.labels[maximally_overlapping_mask_index];
+      if (pan_category >= 53u || pan_category == 41u) {
+      //it is a thing segment
+      //table is a thing
+        // Found a maximally overlapping mask, assign
+        // the corresponding semantic and instance labels.
+        //add 0u to ensure it is unsigned int
+        (*segments)[i].semantic_label.insert(unsigned(pan_category));
+        // Instance label 0u corresponds to a segment with no overlapping
+        // mask, thus the assigned index is incremented by 1u.
+        (*segments)[i].instance_label.insert(maximally_overlapping_mask_index + 1u);
+      }
+      else if(pan_category == 42u || pan_category == 51u || pan_category == 52u){
+      // it is a stuff segment
+      //id 42: floor_merged
+      //id 51: wall_other_merged
+      //id 52: rug_merged
+        (*segments)[i].semantic_label.insert(unsigned(pan_category));    
+        (*segments)[i].instance_label.insert(0u);       
+      }
+      else {
+          LOG(INFO) << "!!!!!!!!!!!!!!!!!!WRONG Label!!!!!!!!!!!!!!!!!!!!!!!!";
+          
+    }*/
+      
+      // Strategy 2:
+    if (max_overlap_size > 0) {
+      int pan_category;
+      //floor division
+      LOG(INFO) << "category Label: " << instance_segmentation.labels[maximally_overlapping_mask_index]; 
+      //LOG(INFO) << "category Label / 1000: " << instance_segmentation.labels[maximally_overlapping_mask_index]/1000; 
+      
+      // if format is offseted id
+      //pan_category = instance_segmentation.labels[maximally_overlapping_mask_index] / 1000;
+      // if format is semseg in pan2ch
+      pan_category = instance_segmentation.labels[maximally_overlapping_mask_index];
+      if(pan_category == 42u) {
+      //it is a thing segment
+      //table is a thing
+        // Found a maximally overlapping mask, assign
+        // the corresponding semantic and instance labels.
+        //add 0u to ensure it is unsigned int
+        (*segments)[i].semantic_label.insert(unsigned(pan_category));
+        // Instance label 0u corresponds to a segment with no overlapping
+        // mask, thus the assigned index is incremented by 1u.
+        (*segments)[i].instance_label.insert(142u);
+      }
+      else if(pan_category == 51u) {
+      //it is a thing segment
+      //table is a thing
+        // Found a maximally overlapping mask, assign
+        // the corresponding semantic and instance labels.
+        //add 0u to ensure it is unsigned int
+        (*segments)[i].semantic_label.insert(unsigned(pan_category));
+        // Instance label 0u corresponds to a segment with no overlapping
+        // mask, thus the assigned index is incremented by 1u.
+        (*segments)[i].instance_label.insert(151u);
+      }      
+      else {
+      // it is a stuff segment
+      //id 42: floor_merged
+      //id 51: wall_other_merged
+      //id 52: rug_merged
+        (*segments)[i].semantic_label.insert(unsigned(pan_category));    
+        (*segments)[i].instance_label.insert(maximally_overlapping_mask_index + 1u);       
+      }     
     }
   }
 }

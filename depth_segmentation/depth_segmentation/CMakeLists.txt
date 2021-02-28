@@ -58,6 +58,9 @@ if (WITH_MASKRCNNROS)
 endif()
 
 
+add_definitions(-DUPSPANROS_AVAILABLE)
+
+
 cs_add_library(${PROJECT_NAME}
   src/depth_segmentation.cpp
 )
