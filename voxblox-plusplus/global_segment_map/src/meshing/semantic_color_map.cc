@@ -117,6 +117,8 @@ CocoColorMap::CocoColorMap()
   color_code_[69] = {160, 0, 128};    // Microwave
   color_code_[59] = {64, 64, 128};    // Potted plant
   color_code_[73] = {64, 192, 0};     // Refrigerator
+  color_code_[136] = {110,255,255};   // floor UPSNet
+  color_code_[137] = {255,255,0};     // wall UPSNet
 }
 
 }  // namespace voxblox

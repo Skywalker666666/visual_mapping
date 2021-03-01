@@ -1059,42 +1059,55 @@ void DepthSegmenter::labelMap(
     if (max_overlap_size > 0) {
       int pan_category;
       //floor division
-      LOG(INFO) << "category Label: " << instance_segmentation.labels[maximally_overlapping_mask_index]; 
+//       LOG(INFO) << "category Label: " << instance_segmentation.labels[maximally_overlapping_mask_index]; 
+      
+      
       //LOG(INFO) << "category Label / 1000: " << instance_segmentation.labels[maximally_overlapping_mask_index]/1000; 
       
       // if format is offseted id
       //pan_category = instance_segmentation.labels[maximally_overlapping_mask_index] / 1000;
       // if format is semseg in pan2ch
       pan_category = instance_segmentation.labels[maximally_overlapping_mask_index];
-      if(pan_category == 42u) {
-      //it is a thing segment
-      //table is a thing
+      if(unsigned(pan_category) == 42u || unsigned(pan_category) == 7u ) {
+      //it is stuff: floor
         // Found a maximally overlapping mask, assign
         // the corresponding semantic and instance labels.
         //add 0u to ensure it is unsigned int
-        (*segments)[i].semantic_label.insert(unsigned(pan_category));
+        (*segments)[i].semantic_label.insert(136u);
+        //7u 128,128,128 RGB is grey
         // Instance label 0u corresponds to a segment with no overlapping
         // mask, thus the assigned index is incremented by 1u.
-        (*segments)[i].instance_label.insert(142u);
+        (*segments)[i].instance_label.insert(50u);
       }
-      else if(pan_category == 51u) {
-      //it is a thing segment
+      else if(unsigned(pan_category) == 51u) {
+      //it is stuff: wall
       //table is a thing
         // Found a maximally overlapping mask, assign
         // the corresponding semantic and instance labels.
         //add 0u to ensure it is unsigned int
-        (*segments)[i].semantic_label.insert(unsigned(pan_category));
+        (*segments)[i].semantic_label.insert(137u);
         // Instance label 0u corresponds to a segment with no overlapping
         // mask, thus the assigned index is incremented by 1u.
-        (*segments)[i].instance_label.insert(151u);
+        (*segments)[i].instance_label.insert(60u);
+      }
+      else if(unsigned(pan_category) == 38u) {
+      //it is stuff: ceiling
+      //table is a thing
+        // Found a maximally overlapping mask, assign
+        // the corresponding semantic and instance labels.
+        //add 0u to ensure it is unsigned int
+        (*segments)[i].semantic_label.insert(138u);
+        // Instance label 0u corresponds to a segment with no overlapping
+        // mask, thus the assigned index is incremented by 1u.
+        (*segments)[i].instance_label.insert(70u);
       }      
       else {
       // it is a stuff segment
       //id 42: floor_merged
       //id 51: wall_other_merged
       //id 52: rug_merged
-        (*segments)[i].semantic_label.insert(unsigned(pan_category));    
-        (*segments)[i].instance_label.insert(maximally_overlapping_mask_index + 1u);       
+         (*segments)[i].semantic_label.insert(unsigned(pan_category));    
+         (*segments)[i].instance_label.insert(maximally_overlapping_mask_index + 1u);       
       }     
     }
   }

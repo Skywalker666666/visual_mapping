@@ -273,6 +273,9 @@ void MeshLabelIntegrator::updateMeshColor(const Block<LabelVoxel>& label_block,
                 semantic_instance_label_fusion_ptr_->getSemanticLabel(
                     voxel.label);
           }
+//           LOG(INFO) << "------------------------------------------------------------"; 
+//           LOG(INFO) << "category instance_label: " << unsigned(instance_label) << " + category semantic_label: " << unsigned(semantic_label); 
+          
           semantic_color_map_.getColor(semantic_label, &(mesh->colors[i]));
         } break;
         case kInstance: {

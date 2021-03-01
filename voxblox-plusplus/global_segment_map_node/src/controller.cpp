@@ -471,37 +471,37 @@ void Controller::integrateFrame(ros::Time msg_timestamp) {
   Pointcloud point_cloud_all_segments_t;
   
   
-//  /* for (Segment* segment : segments_to_integrate_) {
-//     LOG(INFO)<< "original  insance label: "  << unsigned(segment->instance_label_) << std::endl;
-//     LOG(INFO)<< "original  geo label: "      << segment->label_ << std::endl;
-//     LOG(INFO)<< "original  semantic label: " << unsigned(segment->semantic_label_) << std::endl;
-//       
-//     if(segment->semantic_label_ == 42u) {
-//     // floor merged
-//       LOG(INFO)<< "original wall insance label: " << unsigned(segment->instance_label_) << std::endl;
-//       LOG(INFO)<< "original wall geo label: " << segment->label_ << std::endl;
-// 
-//       segment->instance_label_ = 100u;
-//       segment->label_ = 2000;      
-//     }
-//     else if(segment->semantic_label_ == 51u){
+  for (Segment* segment : segments_to_integrate_) {
+//      LOG(INFO)<< "original  insance label: "  << unsigned(segment->instance_label_) << std::endl;
+//      LOG(INFO)<< "original  geo label: "      << segment->label_ << std::endl;
+//      LOG(INFO)<< "original  semantic label: " << unsigned(segment->semantic_label_) << std::endl;
+       
+     if(segment->semantic_label_ == 136u) {
+//      // floor merged
+//        LOG(INFO)<< "original wall insance label: " << unsigned(segment->instance_label_) << std::endl;
+//        LOG(INFO)<< "original wall geo label: " << segment->label_ << std::endl;
+//  
+        segment->instance_label_ = 100u;
+        segment->label_ = 2000;      
+     }
+     else if(segment->semantic_label_ == 137u){
 //     // wall other merged
 //       LOG(INFO)<< "original floor insance label: " << unsigned(segment->instance_label_) << std::endl;
 //       LOG(INFO)<< "original floor geo label: " << segment->label_ << std::endl;  
-//       segment->instance_label_ = 110u;
-//       segment->label_ = 3000; 
-//     }
-//     else if(segment->semantic_label_ == 52u){
-//     // rug merged
+       segment->instance_label_ = 103u;
+       segment->label_ = 2500; 
+    }
+    else if(segment->semantic_label_ == 138u){
+    // ceiling
 //       LOG(INFO)<< "original floor insance label: " << unsigned(segment->instance_label_) << std::endl;
-//       LOG(INFO)<< "original floor geo label: " << segment->label_ << std::endl;  
-//       segment->instance_label_ = 120u;
-//       segment->label_ = 4000; 
-//     }
+//      LOG(INFO)<< "original floor geo label: " << segment->label_ << std::endl;
+      segment->instance_label_ = 105;
+      segment->label_ = 3000; 
+    }
 //     //else {
 //     //  LOG(INFO)<< "Do nothing for non stuff (thing) " << std::endl;
-//     //}
-//   }  */
+//      }
+   }  
   
   
   

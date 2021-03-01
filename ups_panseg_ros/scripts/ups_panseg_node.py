@@ -82,9 +82,13 @@ class UPSPanSegNode(object):
 
         parser = argparse.ArgumentParser()
         args, rest = parser.parse_known_args()
-        args.cfg = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/upsnet/experiments/upsnet_resnet50_coco_solo_1gpu.yaml"
+        #args.cfg = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/upsnet/experiments/upsnet_resnet50_coco_solo_1gpu.yaml"
         
-        args.weight_path = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/output/upsnet/coco/upsnet_resnet50_coco_1gpu/train2017/upsnet_resnet_50_coco_234000.pth"
+        args.cfg = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/upsnet/experiments/upsnet_resnet50_coco_4gpu.yaml"
+        
+        #args.weight_path = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/output/upsnet/coco/upsnet_resnet50_coco_1gpu/train2017/upsnet_resnet_50_coco_234000.pth"
+        
+        args.weight_path = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/model/upsnet_resnet_50_coco_90000.pth"
         
         args.eval_only = False
         
@@ -236,26 +240,26 @@ class UPSPanSegNode(object):
         l = np.unique(pan)
         print("pan: ")
         print(np.unique(pan))
-        
+        #differentiate different instances with same categories.
         for el in l:
             # floor division, very cool
-            print("el: ")
-            print(el)
+            sem_mask = (pan == el)
 
             category = el // OFFSET
             if category == VOID:
                 continue
-            sem_mask = (pan == el)
             # id 42: floor_merged
             # id 51: wall_other_merged
             # id 52: rug_merged
+            print("py py py categories: ")
+            print(category)
 
             #if int(category) >= 53 or int(category) == 41 or int(category) == 42 or int(category) == 51 or #int(category) == 52:
-            print("size of mask: " + str(sum(sum(sem_mask*1))))
+            #print("size of mask: " + str(sum(sum(sem_mask*1))))
             if int(category) >= 0 and sum(sum(sem_mask*1)) > 20:
                 #print("category_id: coco panoptic categories annotation")
                 #print(" sem: " + str(category) + " of pan: " + str(el))
-                print("size of mask: " + str(sum(sum(sem_mask*1))))
+                #print("size of mask: " + str(sum(sum(sem_mask*1))))
                 
                 # watch out, it is uin8 for id in voxblox <= 255
                 result_msg.class_ids.append(np.uint8(category))

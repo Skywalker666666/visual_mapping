@@ -10,7 +10,7 @@
 
   <arg name="depth_segmentation_node_params_name" default="$(find depth_segmentation)/cfg/scenenn_config.yaml"/>
 
-  <node name="depth_segmentation_node" pkg="depth_segmentation" type="depth_segmentation_node" output="screen">
+  <node name="depth_segmentation_node" pkg="depth_segmentation" type="depth_segmentation_node" output="log">
     <rosparam command="load" file="$(arg depth_segmentation_node_params_name)" />
     <param name="semantic_instance_segmentation/enable" value="true"/>
     <param name="label_display" value="$(arg visualize)"/>
