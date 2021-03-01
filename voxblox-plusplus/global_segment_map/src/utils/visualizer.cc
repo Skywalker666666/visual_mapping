@@ -48,14 +48,6 @@ void Visualizer::visualizeMesh() {
     visualizer->setPosition(650, 800);
 
     // scenenn223
-//     visualizer->setCameraPosition(-1.41162, 6.28602, -2.000336, 
-//                                   -1.49346, 0.117437, -1.7843885, 
-//                                   0.0165199, -0.0624571, -0.997911);
-    
-//     visualizer->setCameraPosition(-0.41162, 7.28602, -1.700336, 
-//                                   -1.49346, 0.117437, -1.4843885, 
-//                                   0.0165199, -0.0624571, -0.997911);
-
 //     //working version:
 //     visualizer->setCameraPosition(-0.41162, 7.28602, -1.300336, 
 //                                   -1.49346, 0.117437, -1.0843885, 
