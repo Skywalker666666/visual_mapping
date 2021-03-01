@@ -1147,8 +1147,6 @@ void DepthSegmenter::labelMap(
       LOG(INFO)<< "semantic label of THING segment: "  << instance_segmentation.labels[maximally_overlapping_mask_index] << std::endl;        
       LOG(INFO)<< "instance label of THING segment: "  << maximally_overlapping_mask_index +
                                            1u << std::endl;       
-      
-      
     }
   }
   
@@ -1194,7 +1192,18 @@ void DepthSegmenter::labelMap(
         //(*segments)[i].instance_label.insert(maximally_overlapping_mask_index + segments->size() + 1u);      
         // strategy 2:
         //(*segments)[i].instance_label.insert(stuff_segmentation.labels[maximally_overlapping_mask_index] + 10);
-        (*segments)[i].instance_label.insert(0u);
+        if (stuff_segmentation.labels[maximally_overlapping_mask_index] == 82u){
+          (*segments)[i].instance_label.insert(100u);
+        }
+        else if(stuff_segmentation.labels[maximally_overlapping_mask_index] == 85u){
+          (*segments)[i].instance_label.insert(115u);
+        }
+        else if(stuff_segmentation.labels[maximally_overlapping_mask_index] == 87u ){
+          (*segments)[i].instance_label.insert(135u);     
+        }
+        else{
+          LOG(INFO)<< "Wrong. Unknown stuff are broadcasted." << std::endl;
+        }
         
         LOG(INFO)<< "semantic label of stuff segment: "  << stuff_segmentation.labels[maximally_overlapping_mask_index] << std::endl;        
         //LOG(INFO)<< "instance label of stuff segment: "  << stuff_segmentation.labels[maximally_overlapping_mask_index] << std::endl;

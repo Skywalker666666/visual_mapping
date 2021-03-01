@@ -193,7 +193,7 @@ class PSPSemSegNode(object):
             #print("category_id: int(category) + 300 ")
             #print(str(category + 300))
             #print(ade20k_id2label[int(category)].name)
-            if ade20k_id2label[int(category)].name == 'wall' or ade20k_id2label[int(category)].name == 'floor':
+            if ade20k_id2label[int(category)].name == 'wall' or ade20k_id2label[int(category)].name == 'floor' or ade20k_id2label[int(category)].name == 'ceiling':
                 print("category_id: int(category) + 82 ")
                 print(str(category + 82))
 

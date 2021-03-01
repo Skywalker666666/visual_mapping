@@ -506,14 +506,21 @@ void Controller::integrateFrame(ros::Time msg_timestamp) {
       LOG(INFO)<< "original wall geo label: " << segment->label_ << std::endl;
 
       segment->instance_label_ = 100u;
-      segment->label_ = 2000;      
+      segment->label_ = 3000;      
     }
     else if(segment->semantic_label_ == 85u){
     // floor
       LOG(INFO)<< "original floor insance label: " << unsigned(segment->instance_label_) << std::endl;
       LOG(INFO)<< "original floor geo label: " << segment->label_ << std::endl;  
-      segment->instance_label_ = 100u;
-      segment->label_ = 2000; 
+      segment->instance_label_ = 115u;
+      segment->label_ = 4000; 
+    }
+    else if(segment->semantic_label_ == 87u){
+    // ceiling
+      LOG(INFO)<< "original floor insance label: " << unsigned(segment->instance_label_) << std::endl;
+      LOG(INFO)<< "original floor geo label: " << segment->label_ << std::endl;  
+      segment->instance_label_ = 135u;
+      segment->label_ = 5000; 
     }
     //else {
     //  LOG(INFO)<< "Do nothing for non stuff (thing) " << std::endl;
