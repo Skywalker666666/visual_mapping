@@ -1068,16 +1068,22 @@ void DepthSegmenter::labelMap(
       //pan_category = instance_segmentation.labels[maximally_overlapping_mask_index] / 1000;
       // if format is semseg in pan2ch
       pan_category = instance_segmentation.labels[maximally_overlapping_mask_index];
-      if(unsigned(pan_category) == 42u || unsigned(pan_category) == 7u ) {
+      if(unsigned(pan_category) == 42u || unsigned(pan_category) == 7u || unsigned(pan_category) ==  52u) {
       //it is stuff: floor
         // Found a maximally overlapping mask, assign
         // the corresponding semantic and instance labels.
-        //add 0u to ensure it is unsigned int
+        // add 0u to ensure it is unsigned int
         (*segments)[i].semantic_label.insert(136u);
         //7u 128,128,128 RGB is grey
         // Instance label 0u corresponds to a segment with no overlapping
         // mask, thus the assigned index is incremented by 1u.
         (*segments)[i].instance_label.insert(50u);
+        
+        //segments->erase(segments->begin() + i);
+//         (*segments)[i].points.clear();
+//         (*segments)[i].normals.clear();
+//         (*segments)[i].original_colors.clear();
+//         (*segments)[i].label.clear();
       }
       else if(unsigned(pan_category) == 51u) {
       //it is stuff: wall
@@ -1089,6 +1095,11 @@ void DepthSegmenter::labelMap(
         // Instance label 0u corresponds to a segment with no overlapping
         // mask, thus the assigned index is incremented by 1u.
         (*segments)[i].instance_label.insert(60u);
+//         (*segments)[i].points.clear();
+//         (*segments)[i].normals.clear();
+//         (*segments)[i].original_colors.clear();
+//         (*segments)[i].label.clear();        
+        
       }
       else if(unsigned(pan_category) == 38u) {
       //it is stuff: ceiling

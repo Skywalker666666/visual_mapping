@@ -82,13 +82,13 @@ class UPSPanSegNode(object):
 
         parser = argparse.ArgumentParser()
         args, rest = parser.parse_known_args()
-        #args.cfg = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/upsnet/experiments/upsnet_resnet50_coco_solo_1gpu.yaml"
+        args.cfg = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/upsnet/experiments/upsnet_resnet50_coco_solo_1gpu.yaml"
+
+        args.weight_path = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/output/upsnet/coco/upsnet_resnet50_coco_1gpu/train2017/upsnet_resnet_50_coco_234000.pth"
         
-        args.cfg = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/upsnet/experiments/upsnet_resnet50_coco_4gpu.yaml"
+        #args.cfg = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/upsnet/experiments/upsnet_resnet50_coco_4gpu.yaml"
         
-        #args.weight_path = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/output/upsnet/coco/upsnet_resnet50_coco_1gpu/train2017/upsnet_resnet_50_coco_234000.pth"
-        
-        args.weight_path = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/model/upsnet_resnet_50_coco_90000.pth"
+        #args.weight_path = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/model/upsnet_resnet_50_coco_90000.pth"
         
         args.eval_only = False
         
@@ -256,7 +256,8 @@ class UPSPanSegNode(object):
 
             #if int(category) >= 53 or int(category) == 41 or int(category) == 42 or int(category) == 51 or #int(category) == 52:
             #print("size of mask: " + str(sum(sum(sem_mask*1))))
-            if int(category) >= 0 and sum(sum(sem_mask*1)) > 20:
+            if int(category) >= 1 and sum(sum(sem_mask*1)) > 20:
+                # category = 0 is banner, but looks like it is a bug.
                 #print("category_id: coco panoptic categories annotation")
                 #print(" sem: " + str(category) + " of pan: " + str(el))
                 #print("size of mask: " + str(sum(sum(sem_mask*1))))
