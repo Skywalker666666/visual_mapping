@@ -1080,10 +1080,10 @@ void DepthSegmenter::labelMap(
         (*segments)[i].instance_label.insert(50u);
         
         //segments->erase(segments->begin() + i);
-//         (*segments)[i].points.clear();
-//         (*segments)[i].normals.clear();
-//         (*segments)[i].original_colors.clear();
-//         (*segments)[i].label.clear();
+// // //         (*segments)[i].points.clear();
+// // //         (*segments)[i].normals.clear();
+// // //         (*segments)[i].original_colors.clear();
+// // //         (*segments)[i].label.clear();
       }
       else if(unsigned(pan_category) == 51u) {
       //it is stuff: wall
@@ -1091,14 +1091,15 @@ void DepthSegmenter::labelMap(
         // Found a maximally overlapping mask, assign
         // the corresponding semantic and instance labels.
         //add 0u to ensure it is unsigned int
-        (*segments)[i].semantic_label.insert(137u);
+         (*segments)[i].semantic_label.insert(137u);
         // Instance label 0u corresponds to a segment with no overlapping
         // mask, thus the assigned index is incremented by 1u.
-        (*segments)[i].instance_label.insert(60u);
-//         (*segments)[i].points.clear();
-//         (*segments)[i].normals.clear();
-//         (*segments)[i].original_colors.clear();
-//         (*segments)[i].label.clear();        
+         (*segments)[i].instance_label.insert(60u);
+
+// // //         (*segments)[i].points.clear();
+// // //         (*segments)[i].normals.clear();
+// // //         (*segments)[i].original_colors.clear();
+// // //         (*segments)[i].label.clear();        
         
       }
       else if(unsigned(pan_category) == 38u) {
@@ -1107,10 +1108,15 @@ void DepthSegmenter::labelMap(
         // Found a maximally overlapping mask, assign
         // the corresponding semantic and instance labels.
         //add 0u to ensure it is unsigned int
-        (*segments)[i].semantic_label.insert(138u);
+         (*segments)[i].semantic_label.insert(138u);
         // Instance label 0u corresponds to a segment with no overlapping
         // mask, thus the assigned index is incremented by 1u.
-        (*segments)[i].instance_label.insert(70u);
+         (*segments)[i].instance_label.insert(70u);
+//         (*segments)[i].points.clear();
+//         (*segments)[i].normals.clear();
+//         (*segments)[i].original_colors.clear();
+//         (*segments)[i].label.clear();        
+        
       }      
       else {
       // it is a stuff segment

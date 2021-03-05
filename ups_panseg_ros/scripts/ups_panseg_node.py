@@ -211,10 +211,25 @@ class UPSPanSegNode(object):
                     #misc.imsave(filename, colored_class_image)
                 #rospy.loginfo(str(cm.shape))
                
-                # one image per round, so [0], cuz pred_pans_2ch is a list, like[[]]
                 result_msg = self._build_result_msg(msg, pred_pans_2ch[0])
                 self._result_pub.publish(result_msg)
-                
+               
+                              
+               
+               
+               
+                ## one image per round, so [0], cuz pred_pans_2ch is a list, like[[]]
+                #uni_l = np.unique(pred_pans_2ch[0][:, :, 0])
+                #if np.array_equal(uni_l, [51]) or np.array_equal(uni_l, [51,255]) or np.array_equal(uni_l, [38, 51]) or np.array_equal(uni_l, [38, 51, 255]) or np.array_equal(uni_l, [7, 42, 51, 52, 255]) or np.array_equal(uni_l, [7, 51, 255]) or np.array_equal(uni_l, [7, 51]) or np.array_equal(uni_l, [42, 51, 255]) or np.array_equal(uni_l, [7, 42, 51, 255]) or np.array_equal(uni_l, [51, 52, 255]) or np.array_equal(uni_l, [51, 52]) or np.array_equal(uni_l, [7,42,51]):
+                    ##do nothing, not publish
+                    #print("useless frame in prunning, do nothing")
+                #else:
+                    #result_msg = self._build_result_msg(msg, pred_pans_2ch[0])
+                    #self._result_pub.publish(result_msg)
+               
+               
+               
+               
                 # Visualize results
                 #if self._visualization:
                     ##visualize_img = self._visualize(result, np_image, msg.header)
