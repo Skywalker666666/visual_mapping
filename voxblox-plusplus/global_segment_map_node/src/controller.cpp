@@ -470,8 +470,9 @@ void Controller::integrateFrame(ros::Time msg_timestamp) {
   Transformation T_G_C = segments_to_integrate_.at(0)->T_G_C_;
   Pointcloud point_cloud_all_segments_t;
   
-  
+  int ii = 0;
   for (Segment* segment : segments_to_integrate_) {
+     ii = ii + 1;
 //      LOG(INFO)<< "original  insance label: "  << unsigned(segment->instance_label_) << std::endl;
 //      LOG(INFO)<< "original  geo label: "      << segment->label_ << std::endl;
 //      LOG(INFO)<< "original  semantic label: " << unsigned(segment->semantic_label_) << std::endl;
@@ -498,9 +499,11 @@ void Controller::integrateFrame(ros::Time msg_timestamp) {
       segment->instance_label_ = 105;
       segment->label_ = 3000; 
     }
-//     //else {
+    else {
 //     //  LOG(INFO)<< "Do nothing for non stuff (thing) " << std::endl;
-//      }
+      segment->instance_label_ = segment->semantic_label_; 
+      segment->label_ = segment->semantic_label_ + unsigned(ii) ;         
+    }
    }  
   
   

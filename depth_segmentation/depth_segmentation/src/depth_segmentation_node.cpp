@@ -259,7 +259,10 @@ class DepthSegmentationNode {
   void publish_segments(
       const std::vector<depth_segmentation::Segment>& segments,
       const std_msgs::Header& header) {
-    CHECK_GT(segments.size(), 0u);
+    //CHECK_GT(segments.size(), 0u);
+    if (segments.size() == 0u){
+        return;            
+    }
     // Just for rviz also publish the whole scene, as otherwise only ~10
     // segments are shown:
     // https://github.com/ros-visualization/rviz/issues/689
@@ -269,10 +272,10 @@ class DepthSegmentationNode {
       pcl::PointCloud<PointSurfelLabel>::Ptr scene_pcl(
           new pcl::PointCloud<PointSurfelLabel>);
       for (depth_segmentation::Segment segment : segments) {
-        CHECK_GT(segment.points.size(), 0u);
-//         if (segment.points.size() == 0u){
-//           continue;            
-//         }
+//        CHECK_GT(segment.points.size(), 0u);
+         if (segment.points.size() == 0u){
+           continue;            
+         }
         pcl::PointCloud<PointSurfelLabel>::Ptr segment_pcl(
             new pcl::PointCloud<PointSurfelLabel>);
         for (std::size_t i = 0u; i < segment.points.size(); ++i) {

@@ -38,24 +38,24 @@ void Visualizer::visualizeMesh() {
     visualizer->setBackgroundColor(255, 255, 255);
     visualizer->initCameraParameters();
     // TODO(grinvalm): find some general default parameters.
-    // scenenn231
-    visualizer->setCameraPosition(-1.41162, 6.28602, -0.300336, -1.49346,
-                                  0.117437, 0.0843885, 0.0165199, -0.0624571,
-                                  -0.997911);
-    visualizer->setCameraClipDistances(1.79126, 8.86051);
-
-    visualizer->setSize(1900, 1300);
-    visualizer->setPosition(650, 800);
-
-    // scenenn223
-//     //working version:
-//     visualizer->setCameraPosition(-0.41162, 7.28602, -1.300336, 
-//                                   -1.49346, 0.117437, -1.0843885, 
-//                                   0.0165199, -0.0624571, -0.997911);    
-//     
+// // //     // scenenn231
+//     visualizer->setCameraPosition(-1.41162, 6.28602, -0.300336, -1.49346,
+//                                   0.117437, 0.0843885, 0.0165199, -0.0624571,
+//                                   -0.997911);
 //     visualizer->setCameraClipDistances(1.79126, 8.86051);
-//     visualizer->setSize(1900, 1600);
+// 
+//     visualizer->setSize(1900, 1300);
 //     visualizer->setPosition(650, 800);
+
+// // //     scenenn223
+    //working version:
+    visualizer->setCameraPosition(-0.41162, 7.28602, -1.300336, 
+                                  -1.49346, 0.117437, -1.0843885, 
+                                  0.0165199, -0.0624571, -0.997911);    
+    
+    visualizer->setCameraClipDistances(1.79126, 8.86051);
+    visualizer->setSize(1900, 1600);
+    visualizer->setPosition(650, 800);
     
     
     pcl_visualizers.push_back(visualizer);

@@ -987,17 +987,79 @@ void DepthSegmenter::labelMap(const cv::Mat& rgb_image,
   *labeled_map = output;
 }
 
+
+
+// for map prunning
 void DepthSegmenter::labelMap(
     const cv::Mat& rgb_image, const cv::Mat& depth_image,
     const SemanticInstanceSegmentation& instance_segmentation,
     const cv::Mat& depth_map, const cv::Mat& edge_map,
     const cv::Mat& normal_map, cv::Mat* labeled_map,
     std::vector<cv::Mat>* segment_masks, std::vector<Segment>* segments) {
-  labelMap(rgb_image, depth_image, depth_map, edge_map, normal_map, labeled_map,
-           segment_masks, segments);
+
+  constexpr size_t kMaskValue = 255u;
+
+  LOG(INFO)<< "Start label Map 2:************************************************************* " << std::endl;
+
+  cv::Mat original_depth_map;
+  cv::rgbd::depthTo3d(depth_image, depth_camera_.getCameraMatrix(),
+                      original_depth_map);
+
+  segments->resize(instance_segmentation.masks.size());
+  segment_masks->resize(instance_segmentation.masks.size());
+  for (cv::Mat& segment_mask : *segment_masks) {
+    segment_mask = cv::Mat(depth_image.size(), CV_8UC1, cv::Scalar(0));
+  }
+
+
+  for (size_t j = 0u; j < instance_segmentation.masks.size(); ++j) {
+    for (size_t x = 0u; x < instance_segmentation.masks[j].cols; ++x) {
+      for (size_t y = 0u; y < instance_segmentation.masks[j].rows; ++y) {
+        // Append vectors from VPS network and normals from normal_map to
+        // vectors of segments.
+        if(instance_segmentation.masks[j].at<uint8_t>(y,x) == 255){
+          cv::Vec3f point = original_depth_map.at<cv::Vec3f>(y, x);
+          // I use 150m, 100m
+          //if (point[2] != 0 && abs(point[2]) < 100){
+          if ( abs(point[2]) < 10){
+            //we need to flip all x y and z
+            //point[1] = -point[1];
+            //point[2] = -point[2];
+            cv::Vec3f normal = normal_map.at<cv::Vec3f>(y, x);
+            //normal[0] = -normal[0];
+            //normal[1] = -normal[1];          
+            //normal[2] = -normal[2];
+            cv::Vec3b original_color = rgb_image.at<cv::Vec3b>(y, x);
+            cv::Vec3f color_f;
+            constexpr bool kUseOriginalColors = true;
+            if (kUseOriginalColors) {
+              color_f = cv::Vec3f(static_cast<float>(original_color[0]),
+                                  static_cast<float>(original_color[1]),
+                                  static_cast<float>(original_color[2]));
+            } else {
+            //color_f = cv::Vec3f(static_cast<float>(colors[label][0]),
+            //                    static_cast<float>(colors[label][1]),
+            //                    static_cast<float>(colors[label][2]));
+            }
+            //std::vector<cv::Vec3f> rgb_point_with_normals{point, normal,
+            //                                              color_f};
+            Segment& segment = (*segments)[j];
+            segment.points.push_back(point);
+            segment.normals.push_back(normal);
+            segment.original_colors.push_back(color_f);
+            segment.label.insert(j);
+            cv::Mat& segment_mask = (*segment_masks)[j];
+            segment_mask.at<uint8_t>(y, x) = kMaskValue;
+          }
+        }
+      }
+    }
+//   LOG(INFO)<< "Built one segments:************************************************************* " << j << "/" << instance_segmentation.masks.size() << std::endl;
+  }//j < instance_segmentation.masks.size()
+
 
   for (size_t i = 0u; i < segments->size(); ++i) {
-    // For each DS segment identify the corresponding
+    // For each Panoptic segment identify the corresponding
     // maximally overlapping mask, if any.
     size_t maximally_overlapping_mask_index = 0u;
     int max_overlap_size = 0;
@@ -1019,110 +1081,59 @@ void DepthSegmenter::labelMap(
         max_overlap_size = overlap_size;
       }
     }
-    // Strategy 1:
-    /*
+
     if (max_overlap_size > 0) {
       int pan_category;
-      //floor division
-      LOG(INFO) << "category Label: " << instance_segmentation.labels[maximally_overlapping_mask_index]; 
-      //LOG(INFO) << "category Label / 1000: " << instance_segmentation.labels[maximally_overlapping_mask_index]/1000; 
-      
-      // if format is offseted id
-      //pan_category = instance_segmentation.labels[maximally_overlapping_mask_index] / 1000;
-      // if format is semseg in pan2ch
-      pan_category = instance_segmentation.labels[maximally_overlapping_mask_index];
-      if (pan_category >= 53u || pan_category == 41u) {
-      //it is a thing segment
-      //table is a thing
-        // Found a maximally overlapping mask, assign
-        // the corresponding semantic and instance labels.
-        //add 0u to ensure it is unsigned int
-        (*segments)[i].semantic_label.insert(unsigned(pan_category));
-        // Instance label 0u corresponds to a segment with no overlapping
-        // mask, thus the assigned index is incremented by 1u.
-        (*segments)[i].instance_label.insert(maximally_overlapping_mask_index + 1u);
-      }
-      else if(pan_category == 42u || pan_category == 51u || pan_category == 52u){
-      // it is a stuff segment
-      //id 42: floor_merged
-      //id 51: wall_other_merged
-      //id 52: rug_merged
-        (*segments)[i].semantic_label.insert(unsigned(pan_category));    
-        (*segments)[i].instance_label.insert(0u);       
-      }
-      else {
-          LOG(INFO) << "!!!!!!!!!!!!!!!!!!WRONG Label!!!!!!!!!!!!!!!!!!!!!!!!";
-          
-    }*/
-      
-      // Strategy 2:
-    if (max_overlap_size > 0) {
-      int pan_category;
-      //floor division
-//       LOG(INFO) << "category Label: " << instance_segmentation.labels[maximally_overlapping_mask_index]; 
-      
-      
-      //LOG(INFO) << "category Label / 1000: " << instance_segmentation.labels[maximally_overlapping_mask_index]/1000; 
-      
-      // if format is offseted id
-      //pan_category = instance_segmentation.labels[maximally_overlapping_mask_index] / 1000;
-      // if format is semseg in pan2ch
       pan_category = instance_segmentation.labels[maximally_overlapping_mask_index];
       if(unsigned(pan_category) == 42u || unsigned(pan_category) == 7u || unsigned(pan_category) ==  52u) {
-      //it is stuff: floor
         // Found a maximally overlapping mask, assign
         // the corresponding semantic and instance labels.
-        // add 0u to ensure it is unsigned int
         (*segments)[i].semantic_label.insert(136u);
-        //7u 128,128,128 RGB is grey
         // Instance label 0u corresponds to a segment with no overlapping
         // mask, thus the assigned index is incremented by 1u.
         (*segments)[i].instance_label.insert(50u);
-        
-        //segments->erase(segments->begin() + i);
-//         (*segments)[i].points.clear();
-//         (*segments)[i].normals.clear();
-//         (*segments)[i].original_colors.clear();
-//         (*segments)[i].label.clear();
+        //(*segments)[i].instance_label.insert(0u);
       }
-      else if(unsigned(pan_category) == 51u) {
-      //it is stuff: wall
-      //table is a thing
+      else if(unsigned(pan_category) == 51u ){
         // Found a maximally overlapping mask, assign
         // the corresponding semantic and instance labels.
-        //add 0u to ensure it is unsigned int
         (*segments)[i].semantic_label.insert(137u);
         // Instance label 0u corresponds to a segment with no overlapping
         // mask, thus the assigned index is incremented by 1u.
         (*segments)[i].instance_label.insert(60u);
-//         (*segments)[i].points.clear();
-//         (*segments)[i].normals.clear();
-//         (*segments)[i].original_colors.clear();
-//         (*segments)[i].label.clear();        
-        
+        //(*segments)[i].instance_label.insert(0u);
       }
-      else if(unsigned(pan_category) == 38u) {
-      //it is stuff: ceiling
-      //table is a thing
+      else if(unsigned(pan_category) == 38u ){
         // Found a maximally overlapping mask, assign
         // the corresponding semantic and instance labels.
-        //add 0u to ensure it is unsigned int
         (*segments)[i].semantic_label.insert(138u);
         // Instance label 0u corresponds to a segment with no overlapping
         // mask, thus the assigned index is incremented by 1u.
         (*segments)[i].instance_label.insert(70u);
-      }      
+        //(*segments)[i].instance_label.insert(0u);
+      }
+      else if(unsigned(pan_category) >= 53u) { 
+        // Found a maximally overlapping mask, assign
+        // the corresponding semantic and instance labels.
+        //(*segments)[i].semantic_label.insert(13u);
+        (*segments)[i].semantic_label.insert(unsigned(instance_segmentation.labels[maximally_overlapping_mask_index]));
+        // Instance label 0u corresponds to a segment with no overlapping
+        // mask, thus the assigned index is incremented by 1u.
+        (*segments)[i].instance_label.insert(unsigned(instance_segmentation.labels[maximally_overlapping_mask_index]));
+      }
       else {
-      // it is a stuff segment
-      //id 42: floor_merged
-      //id 51: wall_other_merged
-      //id 52: rug_merged
-         (*segments)[i].semantic_label.insert(unsigned(pan_category));    
-         (*segments)[i].instance_label.insert(maximally_overlapping_mask_index + 1u);       
-      }     
+        // Found a maximally overlapping mask, assign
+        // the corresponding semantic and instance labels.
+        //(*segments)[i].semantic_label.insert(13u);
+        (*segments)[i].semantic_label.insert(unsigned(instance_segmentation.labels[maximally_overlapping_mask_index]));
+        // Instance label 0u corresponds to a segment with no overlapping
+        // mask, thus the assigned index is incremented by 1u.
+        (*segments)[i].instance_label.insert(0u);
+      }
     }
   }
 }
+
 
 void segmentSingleFrame(const cv::Mat& rgb_image, const cv::Mat& depth_image,
                         const cv::Mat& depth_intrinsics,

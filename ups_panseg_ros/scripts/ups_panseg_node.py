@@ -90,6 +90,10 @@ class UPSPanSegNode(object):
         
         #args.weight_path = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/model/upsnet_resnet_50_coco_90000.pth"
         
+        
+        # resnet 101
+        #args.weight_path = "/home/zhiliu/Documents/Panoptic_Segement/Cocopanopticapi/UnifiedPanopticSeg/UPSNet_PanMapping/model/upsnet_resnet_101_dcn_coco_270000.pth"        
+        
         args.eval_only = False
         
         update_config(args.cfg)
@@ -256,7 +260,9 @@ class UPSPanSegNode(object):
 
             #if int(category) >= 53 or int(category) == 41 or int(category) == 42 or int(category) == 51 or #int(category) == 52:
             #print("size of mask: " + str(sum(sum(sem_mask*1))))
-            if int(category) >= 1 and sum(sum(sem_mask*1)) > 20:
+            if int(category) >= 0 and sum(sum(sem_mask*1)) > 20:            
+            #if int(category) >= 1 and int(category) != 7 and int(category) != 42 and int(category) != 52 and sum(sum(sem_mask*1)) > 20:
+            
                 # category = 0 is banner, but looks like it is a bug.
                 #print("category_id: coco panoptic categories annotation")
                 #print(" sem: " + str(category) + " of pan: " + str(el))
