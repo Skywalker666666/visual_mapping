@@ -430,14 +430,14 @@ void Controller::processSegment(
     
     float z_transit, z_transit2, z_transit3;
 
-    float time_span1 = (529338336  - 235261352) / 1e9;
-    z_transit = 3.03 * time_span1;
+    float time_span1 = (2854669031451  - 2854374955388) / 1e9;
+    z_transit = 5.80 * time_span1;
     
-    float time_span2 = ( 823415376 - 529338336) / 1e9;
-    z_transit2 = 3.04 * time_span2;
+    float time_span2 = ( 2854963113672 - 2854669031451) / 1e9;
+    z_transit2 = 5.69 * time_span2;
     
-    float time_span3 = (1117492336  - 823415376) / 1e9;
-    z_transit3 = 3.26 * time_span3;
+    float time_span3 = (2855257201448  - 2854963113672) / 1e9;
+    z_transit3 = 5.60 * time_span3;
     
     if(controller_frame_cnt_ == 0){
     tf::Transform tf_transform_city;

@@ -97,25 +97,19 @@ class MaskRCNNNode(object):
                 if msg.header.stamp.to_sec() < 0.5:
                     print("^^^^^^^^^^^^^^^^^^Get image 1")
                     print(str(msg.header.stamp.to_sec()))
-                    img_cityscape = "/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/work_dirs/cityscapes_vps/fusetrack_vpct/test_pans_unified/pan_pred/0500_2995_munster_000173_000004.png"
+                    img_cityscape = "/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/work_dirs/cityscapes_vps/fusetrack_vpct/test_pans_unified/pan_pred/0170_1015_frankfurt_000001_048340.png"
                 elif 0.5 <= msg.header.stamp.to_sec() < 2:
                     print("^^^^^^^^^^^^^^^^^^Get image 2")
                     print(str(msg.header.stamp.to_sec()))
-                    img_cityscape = "/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/work_dirs/cityscapes_vps/fusetrack_vpct/test_pans_unified/pan_pred/0500_2996_munster_000173_000009.png"
+                    img_cityscape = "/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/work_dirs/cityscapes_vps/fusetrack_vpct/test_pans_unified/pan_pred/0170_1016_frankfurt_000001_048345.png"
                 elif 2 <= msg.header.stamp.to_sec() < 3.9:
                     print("^^^^^^^^^^^^^^^^^^Get image 3")
                     print(str(msg.header.stamp.to_sec()))
-                    img_cityscape = "/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/work_dirs/cityscapes_vps/fusetrack_vpct/test_pans_unified/pan_pred/0500_2997_munster_000173_000014.png"
+                    img_cityscape = "/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/work_dirs/cityscapes_vps/fusetrack_vpct/test_pans_unified/pan_pred/0170_1017_frankfurt_000001_048350.png"
                 else:
                     print("^^^^^^^^^^^^^^^^^^Get image 4")
                     print(str(msg.header.stamp.to_sec()))
-                    img_cityscape = "/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/work_dirs/cityscapes_vps/fusetrack_vpct/test_pans_unified/pan_pred/0500_2998_munster_000173_000019.png"
-
-
-
-
-
-
+                    img_cityscape = "/home/zhiliu/Documents/Panoptic_Segement/Videopanoptic/VideoPanopticSeg/work_dirs/cityscapes_vps/fusetrack_vpct/test_pans_unified/pan_pred/0170_1018_frankfurt_000001_048355.png"
             
                 np_image = np.uint32(cv2.imread(img_cityscape))
  
@@ -144,7 +138,7 @@ class MaskRCNNNode(object):
                                [107, 142, 35], [152, 251, 152], [70, 130, 180]]
         
         # 11, 12, 13, 14
-        cisc_vps_munster173_instance_colr = [[0,0,142],[0,6,155],[6,20,134],[24,0,156]]
+        #cisc_vps_munster173_instance_colr = [[0,0,142],[0,6,155],[6,20,134],[24,0,156]]
         
         result_msg = Result()
         result_msg.header = msg.header
@@ -153,26 +147,26 @@ class MaskRCNNNode(object):
         
         for el in l:
             # add it for semantic mapping, remove it for pcd file
-            if el == 180 + 256 * 130 + 256 * 256 * 70:
-                # sky: color[]
-                print("sky is here^^^^^^^^^^^^^^^^^^^^: ")
-                continue
+            #if el == 180 + 256 * 130 + 256 * 256 * 70:
+                ## sky: color[]
+                #print("sky is here^^^^^^^^^^^^^^^^^^^^: ")
+                #continue
 
-            if el == 142 + 256 * 0 + 256 * 256 * 0:
-                # car0: color[]
-                continue
+            #if el == 142 + 256 * 0 + 256 * 256 * 0:
+                ## car0: color[]
+                #continue
 
-            if el == 155 + 256 * 6 + 256 * 256 * 0:
-                # car0: color[]
-                continue
+            #if el == 155 + 256 * 6 + 256 * 256 * 0:
+                ## car0: color[]
+                #continue
 
-            if el == 134 + 256 * 20 + 256 * 256 * 6:
-                # car0: color[]
-                continue
+            #if el == 134 + 256 * 20 + 256 * 256 * 6:
+                ## car0: color[]
+                #continue
 
-            if el == 156 + 256 * 0 + 256 * 256 * 24:
-                # car0: color[]
-                continue
+            #if el == 156 + 256 * 0 + 256 * 256 * 24:
+                ## car0: color[]
+                #continue
             
             sem_mask = (result == el) * 1 
             #if np.sum(sem_mask) > 64 * 64:
@@ -184,19 +178,24 @@ class MaskRCNNNode(object):
                 #print("C1: " + str(C1))
                 #print("C2: " + str(C2))
                 #print("C3: " + str(C3))
-                sem_id = 0
+                sem_id = 30
                 for i,ele in enumerate(cityscapes_vps_color):
                     # BGR and RGB
                     if [C3,C2, C1] == ele:
                         sem_id = i
                         break
-                for j,ele2 in enumerate(cisc_vps_munster173_instance_colr):
-                    if [C3,C2,C1]  == ele2:
-                        sem_id = j + 11
-                        break
+                #for j,ele2 in enumerate(cisc_vps_munster173_instance_colr):
+                    #if [C3,C2,C1]  == ele2:
+                        #sem_id = j + 11
+                        #break
      
                 #print("^^^^^^^^^^^^^^^^^^^^^^^^^^^sem_id: " + str(sem_id))
-                result_msg.class_ids.append(np.uint8(sem_id))
+                if sem_id != 30:
+                    result_msg.class_ids.append(np.uint8(sem_id))
+                    print("sem_id is: ")
+                    print(sem_id)
+                else:
+                    result_msg.class_ids.append(np.uint8((C3 + C2 + C1)/3))        
                 mask = Image()
                 mask.header = msg.header
                 mask.height = result.shape[0]

@@ -1113,8 +1113,8 @@ void DepthSegmenter::labelMap(const sensor_msgs::Image::ConstPtr& depth_msg,
         if(instance_segmentation.masks[j].at<uint8_t>(y,x) == 255){
           cv::Vec3f point = original_depth_map.at<cv::Vec3f>(y, x);
           // I use 150m, 100m
-          //if (point[2] != 0 && abs(point[2]) < 100){
-          if (point[2] >= 1.5 && abs(point[2]) < 100){
+          if (point[2] != 0 && abs(point[2]) < 100){
+          //if (point[2] >= 1.5 && abs(point[2]) < 100){
             //we need to flip all x y and z
             //point[1] = -point[1];
             //point[2] = -point[2];
@@ -1148,7 +1148,11 @@ void DepthSegmenter::labelMap(const sensor_msgs::Image::ConstPtr& depth_msg,
       }
     }
   LOG(INFO)<< "Built one segments:************************************************************* " << j << "/" << instance_segmentation.masks.size() << std::endl;
-  }//j < instance_segmentation.masks.size()
+  
+  LOG(INFO)<< "Built one segments:************************************************************* " << j << "/" << instance_segmentation.masks.size() << std::endl;
+  
+      
+}//j < instance_segmentation.masks.size()
 
 
   for (size_t i = 0u; i < segments->size(); ++i) {
