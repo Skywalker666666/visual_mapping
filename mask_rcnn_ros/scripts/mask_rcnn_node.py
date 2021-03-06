@@ -152,10 +152,28 @@ class MaskRCNNNode(object):
         l = np.unique(result)
         
         for el in l:
+            # add it for semantic mapping, remove it for pcd file
             if el == 180 + 256 * 130 + 256 * 256 * 70:
                 # sky: color[]
                 print("sky is here^^^^^^^^^^^^^^^^^^^^: ")
                 continue
+
+            if el == 142 + 256 * 0 + 256 * 256 * 0:
+                # car0: color[]
+                continue
+
+            if el == 155 + 256 * 6 + 256 * 256 * 0:
+                # car0: color[]
+                continue
+
+            if el == 134 + 256 * 20 + 256 * 256 * 6:
+                # car0: color[]
+                continue
+
+            if el == 156 + 256 * 0 + 256 * 256 * 24:
+                # car0: color[]
+                continue
+            
             sem_mask = (result == el) * 1 
             #if np.sum(sem_mask) > 64 * 64:
             
